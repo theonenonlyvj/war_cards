@@ -108,7 +108,7 @@ body {
 .cards-container {
   display: flex;
   flex-direction: row;
-  gap: 30px;
+  gap: 20px;
   width: 100%;
   justify-content: center;
   align-items: center;
@@ -170,6 +170,12 @@ body {
   text-transform: uppercase;
   text-align: center;
   letter-spacing: 1px;
+}
+
+.local-user {
+  color: var(--neon-cyan);
+  font-weight: bold;
+  text-shadow: 0 0 10px var(--neon-cyan);
 }
 
 .controls {
@@ -281,20 +287,27 @@ body {
   }
 
   .cards-container {
-    flex-direction: column;
-    gap: 15px;
+    flex-direction: row; /* Horizontal faceoff on mobile */
+    gap: 10px;
+    align-items: center;
   }
 
   .card-slot {
+    max-width: 45%; /* Side-by-side */
+    gap: 10px;
+  }
+
+  .holographic-card {
     max-width: 160px;
   }
 
   .card-value {
-    font-size: 2.5rem;
+    font-size: 2.2rem;
   }
 
   .slot-label {
-    font-size: 0.7rem;
+    font-size: 0.6rem;
+    letter-spacing: 0;
   }
 
   .neon-button {
