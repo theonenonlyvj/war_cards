@@ -155,10 +155,11 @@ const App = () => {
       <div className="controls">
          <button 
            onClick={flip} 
-           className="neon-button" 
-           disabled={gameState.status !== 'playing' || isLocalReady}
+           className={`neon-button ${gameState.status === 'incident' ? 'solo-btn' : ''}`}
+           disabled={(gameState.status !== 'playing' && gameState.status !== 'incident') || isLocalReady}
          >
-            {isLocalReady ? 'WAITING FOR SYNC...' : 'INITIATE ENGAGEMENT (FLIP)'}
+            {isLocalReady ? 'WAITING FOR SYNC...' : 
+             gameState.status === 'incident' ? 'DEPLOY REINFORCEMENTS' : 'INITIATE ENGAGEMENT (FLIP)'}
          </button>
       </div>
 

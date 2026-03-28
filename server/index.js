@@ -143,20 +143,47 @@ io.on('connection', (socket) => {
         return;
       }
 
-      const c1 = room.deck1[0];
-      const c2 = room.deck2[0];
-      const result = resolveRound(room.deck1, room.deck2);
-      
-      room.p1Card = c1;
-      room.p2Card = c2;
-      room.winner = result.winner;
-      room.isWar = result.pot.length > 2;
-      room.history = result.history;
+      // Check if we are currently in a Tie situation (War pending)
+      if (room.status === 'incident') {
+        const result = resolveRound(room.deck1, room.deck2, room.pot, room.history);
+        
+        room.p1Card = room.deck1[0] || null; // The NEW face up card
+        room.p2Card = room.deck2[0] || null;
+        room.winner = result.winner;
+        room.isWar = result.pot.length > room.pot.length + 2;
+        room.history = result.history;
+        room.pot = result.pot;
 
-      if (result.winner === 1) {
-        room.deck1.push(...result.pot);
-      } else if (result.winner === 2) {
-        room.deck2.push(...result.pot);
+        if (result.winner !== 0) {
+          room.status = 'playing'; // Back to normal play for next round
+          if (result.winner === 1) room.deck1.push(...result.pot);
+          else if (result.winner === 2) room.deck2.push(...result.pot);
+          room.pot = [];
+        } else {
+          room.status = 'incident'; // Another tie!
+        }
+      } else {
+        // Normal round
+        const c1 = room.deck1.shift();
+        const c2 = room.deck2.shift();
+        const currentPot = [c1, c2];
+        const currentHistory = [{ c1, c2, type: 'battle' }];
+
+        room.p1Card = c1;
+        room.p2Card = c2;
+        room.pot = currentPot;
+        room.history = currentHistory;
+
+        if (c1 === c2) {
+          room.status = 'incident'; // Trigger Emergency
+          room.winner = null;
+          room.isWar = true;
+        } else {
+          room.winner = c1 > c2 ? 1 : 2;
+          if (room.winner === 1) room.deck1.push(...currentPot);
+          else room.deck2.push(...currentPot);
+          room.status = 'playing';
+        }
       }
 
       room.flips.clear();
