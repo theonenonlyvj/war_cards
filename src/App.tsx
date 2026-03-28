@@ -6,8 +6,9 @@ import { useWarGame } from './hooks/useWarGame';
 import { FXLayer } from './components/FXLayer';
 
 const App = () => {
-  const [roomId] = useState('global-war-room'); // Hardcoded for this demo
-  const { gameState, flip } = useWarGame(roomId);
+  const [roomId, setRoomId] = useState<string | null>(null);
+  const [inputRoomId, setInputRoomId] = useState('');
+  const { gameState, flip } = useWarGame(roomId || '');
   const [showFX, setShowFX] = useState(false);
 
   useEffect(() => {
@@ -17,6 +18,33 @@ const App = () => {
       return () => clearTimeout(timer);
     }
   }, [gameState?.isWar]);
+
+  if (!roomId) {
+    return (
+      <div className="command-center">
+        <div className="terminal-overlay">
+          <p>&gt; VWAR COMMAND CENTER INITIALIZED.</p>
+          <p>&gt; ENTER SECTOR CODE TO JOIN BATTLE:</p>
+          <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+            <input 
+              type="text" 
+              value={inputRoomId} 
+              onChange={(e) => setInputRoomId(e.target.value)}
+              placeholder="SECTOR CODE"
+              className="neon-input"
+            />
+            <button 
+              onClick={() => setRoomId(inputRoomId)}
+              className="neon-button"
+              disabled={!inputRoomId.trim()}
+            >
+              JOIN SECTOR
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!gameState) {
     return (

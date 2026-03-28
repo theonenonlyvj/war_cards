@@ -133,6 +133,17 @@ body {
   z-index: 10;
 }
 
+.neon-input {
+  background: transparent;
+  border: 1px solid var(--neon-cyan);
+  color: var(--neon-cyan);
+  padding: 10px;
+  font-family: inherit;
+  font-size: 1.2rem;
+  outline: none;
+  box-shadow: inset 0 0 5px var(--neon-cyan);
+}
+
 .neon-button {
   background: transparent;
   border: 2px solid var(--neon-cyan);
