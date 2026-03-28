@@ -4,6 +4,7 @@ import { Card } from './components/Card';
 import { BattleZone } from './components/BattleZone';
 import { useWarGame } from './hooks/useWarGame';
 import { FXLayer } from './components/FXLayer';
+import { audioManager } from './utils/AudioManager';
 
 const App = () => {
   const [inputRoomId, setInputRoomId] = useState('');
@@ -13,8 +14,11 @@ const App = () => {
   useEffect(() => {
     if (gameState?.isWar) {
       setShowFX(true);
+      audioManager.playSiren();
       const timer = setTimeout(() => setShowFX(false), 2000);
       return () => clearTimeout(timer);
+    } else {
+      audioManager.stopSiren();
     }
   }, [gameState?.isWar]);
 
@@ -78,7 +82,7 @@ const App = () => {
   const isLocalReady = playerIndex === 1 ? gameState.p1Flipped : gameState.p2Flipped;
 
   return (
-    <div className="command-center">
+    <div className={`command-center ${gameState.isWar ? 'emergency-glitch emergency-shake' : ''}`}>
       <FXLayer trigger={showFX} />
       <HUD p1Count={gameState.p1Count} p2Count={gameState.p2Count} isWar={gameState.isWar} />
       
