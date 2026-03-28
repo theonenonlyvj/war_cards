@@ -79,26 +79,54 @@ const App = () => {
           {gameState.status === 'playing' || gameState.status === 'game-over' ? (
             <div className="cards-container">
               <div className="card-slot">
-                {gameState.p1Card ? (
-                  <Card value={mapValue(gameState.p1Card)} suit="&spades;" isFaceUp={true} />
-                ) : (
-                  <div className="holographic-card" style={{ opacity: gameState.p1Flipped ? 0.6 : 0.2 }}>
-                    {gameState.p1Flipped && <div className="scanning-line" />}
-                  </div>
-                )}
+                <div className="slot-stack">
+                  {gameState.history.map((step: any, idx: number) => (
+                    step.type === 'war-reinforcements' && (
+                      <div key={`p1-war-${idx}`} className="war-pile p1-war-pile">
+                        {step.r1.map((_: any, rIdx: number) => (
+                          <div key={rIdx} className="holographic-card face-down-war" style={{ 
+                            transform: `translateY(${rIdx * 10}px) rotate(${rIdx * 2}deg)`,
+                            zIndex: rIdx
+                          }} />
+                        ))}
+                      </div>
+                    )
+                  ))}
+                  {gameState.p1Card ? (
+                    <Card value={mapValue(gameState.p1Card)} suit="&spades;" isFaceUp={true} />
+                  ) : (
+                    <div className="holographic-card" style={{ opacity: gameState.p1Flipped ? 0.6 : 0.2 }}>
+                      {gameState.p1Flipped && <div className="scanning-line" />}
+                    </div>
+                  )}
+                </div>
                 <p className={`slot-label ${playerIndex === 1 ? 'local-user' : ''}`}>
                   {playerIndex === 1 ? 'COMMANDER YOU' : 'P1 ENEMY'} {gameState.p1Flipped ? '[READY]' : ''}
                 </p>
               </div>
 
               <div className="card-slot">
-                {gameState.p2Card ? (
-                  <Card value={mapValue(gameState.p2Card)} suit="&hearts;" isFaceUp={true} />
-                ) : (
-                  <div className="holographic-card" style={{ opacity: gameState.p2Flipped ? 0.6 : 0.2 }}>
-                    {gameState.p2Flipped && <div className="scanning-line" />}
-                  </div>
-                )}
+                <div className="slot-stack">
+                  {gameState.history.map((step: any, idx: number) => (
+                    step.type === 'war-reinforcements' && (
+                      <div key={`p2-war-${idx}`} className="war-pile p2-war-pile">
+                        {step.r2.map((_: any, rIdx: number) => (
+                          <div key={rIdx} className="holographic-card face-down-war" style={{ 
+                            transform: `translateY(${rIdx * 10}px) rotate(${-rIdx * 2}deg)`,
+                            zIndex: rIdx
+                          }} />
+                        ))}
+                      </div>
+                    )
+                  ))}
+                  {gameState.p2Card ? (
+                    <Card value={mapValue(gameState.p2Card)} suit="&hearts;" isFaceUp={true} />
+                  ) : (
+                    <div className="holographic-card" style={{ opacity: gameState.p2Flipped ? 0.6 : 0.2 }}>
+                      {gameState.p2Flipped && <div className="scanning-line" />}
+                    </div>
+                  )}
+                </div>
                 <p className={`slot-label ${playerIndex === 2 ? 'local-user' : ''}`}>
                   {playerIndex === 2 ? 'COMMANDER YOU' : 'P2 ENEMY'} {gameState.p2Flipped ? '[READY]' : ''}
                 </p>
