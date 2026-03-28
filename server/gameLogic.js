@@ -32,6 +32,9 @@ function distributeDecks() {
 function resolveRound(deck1, deck2, pot = [], history = []) {
   const c1 = deck1.shift();
   const c2 = deck2.shift();
+  
+  // Standard War rule: Winner takes both cards in a consistent order (P1 then P2)
+  // to ensure fixed deck order and no unintended 'reshuffling' feel.
   const currentPot = [...pot, c1, c2];
   const roundHistory = [...history, { c1, c2, type: 'battle' }];
 
