@@ -1,3 +1,11 @@
+.command-center-body {
+  background-color: #050505;
+  color: #00ffcc;
+  margin: 0;
+  overflow: hidden;
+  font-family: 'Share Tech Mono', 'Courier New', Courier, monospace;
+}
+
 :root {
   --neon-cyan: #00f3ff;
   --neon-magenta: #ff00ff;

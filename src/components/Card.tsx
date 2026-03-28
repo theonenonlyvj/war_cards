@@ -1,7 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-export const Card = ({ value, suit, isFaceUp }: any) => (
+interface CardProps {
+  value: number | string;
+  suit: string;
+  isFaceUp: boolean;
+}
+
+export const Card = ({ value, suit, isFaceUp }: CardProps) => (
   <motion.div 
     layoutId={`${value}-${suit}`}
     className="holographic-card"
