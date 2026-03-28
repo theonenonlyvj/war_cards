@@ -1,0 +1,129 @@
+:root {
+  --neon-cyan: #00f3ff;
+  --neon-magenta: #ff00ff;
+  --bg-dark: #050505;
+  --terminal-green: #00ff66;
+  --emergency-red: #ff3333;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--neon-cyan);
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  margin: 0;
+  overflow: hidden;
+  height: 100vh;
+}
+
+.command-center {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 20px;
+  box-sizing: border-box;
+  background: radial-gradient(circle at center, #111 0%, #000 100%);
+  border: 1px solid rgba(0, 243, 255, 0.1);
+}
+
+.hud-container {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px;
+  border-bottom: 2px solid var(--neon-cyan);
+  box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: bold;
+}
+
+.hud-container.emergency {
+  border-bottom-color: var(--emergency-red);
+  box-shadow: 0 0 15px rgba(255, 51, 51, 0.5);
+  animation: pulse-red 1s infinite alternate;
+}
+
+.status-monitor {
+  font-size: 1.2rem;
+}
+
+.main-display {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.battle-zone {
+  position: relative;
+  width: 80%;
+  height: 60%;
+  border: 1px solid rgba(0, 243, 255, 0.2);
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.battle-field-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+}
+
+.holographic-card {
+  width: 120px;
+  height: 180px;
+  border: 2px solid var(--neon-cyan);
+  border-radius: 8px;
+  background: rgba(0, 243, 255, 0.1);
+  box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-style: preserve-3d;
+  cursor: pointer;
+}
+
+.card-value {
+  font-size: 3rem;
+  text-shadow: 0 0 10px var(--neon-cyan);
+}
+
+.scanning-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--neon-cyan);
+  box-shadow: 0 0 10px var(--neon-cyan);
+  animation: scan 2s infinite linear;
+  opacity: 0.5;
+}
+
+.terminal-overlay {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  color: var(--terminal-green);
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+@keyframes scan {
+  0% { top: 0%; }
+  100% { top: 100%; }
+}
+
+@keyframes pulse-red {
+  from { opacity: 1; }
+  to { opacity: 0.7; }
+}
