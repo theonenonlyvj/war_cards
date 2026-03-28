@@ -86,7 +86,9 @@ const App = () => {
                     {gameState.p1Flipped && <div className="scanning-line" />}
                   </div>
                 )}
-                <p className="slot-label">P1 {gameState.p1Flipped ? '[READY]' : ''}</p>
+                <p className={`slot-label ${playerIndex === 1 ? 'local-user' : ''}`}>
+                  {playerIndex === 1 ? 'COMMANDER YOU' : 'P1 ENEMY'} {gameState.p1Flipped ? '[READY]' : ''}
+                </p>
               </div>
 
               <div className="card-slot">
@@ -97,7 +99,9 @@ const App = () => {
                     {gameState.p2Flipped && <div className="scanning-line" />}
                   </div>
                 )}
-                <p className="slot-label">P2 {gameState.p2Flipped ? '[READY]' : ''}</p>
+                <p className={`slot-label ${playerIndex === 2 ? 'local-user' : ''}`}>
+                  {playerIndex === 2 ? 'COMMANDER YOU' : 'P2 ENEMY'} {gameState.p2Flipped ? '[READY]' : ''}
+                </p>
               </div>
             </div>
           ) : (
