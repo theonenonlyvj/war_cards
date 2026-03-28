@@ -88,7 +88,7 @@ const App = () => {
       
       <main className="main-display">
         <BattleZone>
-          {gameState.status === 'playing' || gameState.status === 'game-over' ? (
+          {gameState.status === 'playing' || gameState.status === 'game-over' || gameState.status === 'incident' ? (
             <div className="cards-container">
               <div className="card-slot">
                 <div className="slot-stack">
