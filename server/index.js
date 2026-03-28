@@ -1,7 +1,7 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const { distributeDecks, resolveRound } = require('./gameLogic');
+const { distributeDecks } = require('./gameLogic');
 
 const app = express();
 const server = http.createServer(app);
@@ -52,30 +52,22 @@ io.on('connection', (socket) => {
     if (typeof roomId !== 'string' || roomId.trim() === '') {
       return socket.emit('error', 'Invalid room ID');
     }
-
     leavePreviousRoom();
-
     socket.join(roomId);
     if (!rooms.has(roomId)) {
       rooms.set(roomId, { players: [], deck1: [], deck2: [], status: 'waiting' });
     }
-    
     const room = rooms.get(roomId);
-    
-    if (room.players.length >= 2) {
-      return socket.emit('error', 'Room is full');
-    }
-
+    if (room.players.length >= 2) return socket.emit('error', 'Room is full');
     room.players.push(socket.id);
     socket.roomId = roomId;
-    socket.playerIndex = room.players.length; // 1 or 2
+    socket.playerIndex = room.players.length; 
     socket.emit('player-index', socket.playerIndex);
-
     if (room.players.length === 2) {
       const { deck1, deck2 } = distributeDecks();
       room.deck1 = deck1;
       room.deck2 = deck2;
-      room.flips = new Map(); // Track which player has flipped
+      room.flips = new Map();
       room.status = 'playing';
       room.pot = [];
       room.history = [];
@@ -86,22 +78,18 @@ io.on('connection', (socket) => {
 
   socket.on('join-solo', (providedRoomId) => {
     leavePreviousRoom();
-
     const roomId = providedRoomId || `SOLO-${socket.id.substring(0, 6)}`;
     socket.join(roomId);
-    
     const { deck1, deck2 } = distributeDecks();
     rooms.set(roomId, { 
       players: [socket.id, 'BOT-AI'], 
-      deck1, 
-      deck2, 
+      deck1, deck2, 
       flips: new Map(), 
       status: 'playing',
       isSolo: true,
       pot: [],
       history: []
     });
-    
     socket.roomId = roomId;
     socket.playerIndex = 1;
     socket.emit('player-index', 1);
@@ -112,14 +100,14 @@ io.on('connection', (socket) => {
 
   socket.on('flip-card', ({ roomId }) => {
     const room = rooms.get(roomId);
-    if (!room || (room.status !== 'playing' && room.status !== 'incident' && room.status !== 'deployment') || room.resolving) return;
-
-    if (room.flips.has(socket.id)) return; // Prevents double flip
+    if (!room || room.resolving) return;
+    const allowed = ['playing', 'incident', 'deployment'].includes(room.status);
+    if (!allowed || room.flips.has(socket.id)) return;
 
     room.flips.set(socket.id, true);
 
-    // Reset card visuals at the start of a new flip cycle (unless in deployment)
-    if (room.flips.size === 1 && room.status !== 'incident' && room.status !== 'deployment') {
+    // Initial visual reset for a new round
+    if (room.flips.size === 1 && room.status === 'playing') {
       room.p1Card = null;
       room.p2Card = null;
       room.winner = null;
@@ -139,73 +127,56 @@ io.on('connection', (socket) => {
 
     const resolve = () => {
       room.resolving = true;
-
       if (room.deck1.length === 0 || room.deck2.length === 0) {
         room.status = 'game-over';
         room.resolving = false;
-        io.to(roomId).emit('state-update', getPublicState(room));
-        return;
+        return io.to(roomId).emit('state-update', getPublicState(room));
       }
 
       if (room.status === 'incident') {
-        // Stage 2: Deployment (The Burn)
+        // Stage 2: The Burn
         const r1 = room.deck1.splice(0, Math.min(room.deck1.length - 1, 3));
         const r2 = room.deck2.splice(0, Math.min(room.deck2.length - 1, 3));
         room.pot.push(...r1, ...r2);
         room.history.push({ r1, r2, type: 'war-reinforcements' });
-        
-        room.p1Card = null; 
-        room.p2Card = null;
+        room.p1Card = null; room.p2Card = null;
         room.status = 'deployment';
       } else if (room.status === 'deployment') {
-        // Stage 3: The Face-off
+        // Stage 3: The Reveal
         const c1 = room.deck1.shift();
         const c2 = room.deck2.shift();
         room.pot.push(c1, c2);
+        room.p1Card = c1; room.p2Card = c2;
         room.history.push({ c1, c2, type: 'battle' });
-        
-        room.p1Card = c1;
-        room.p2Card = c2;
-
         if (c1 === c2) {
-          room.status = 'incident';
-          room.winner = null;
-          room.isWar = true;
+          room.status = 'incident'; room.isWar = true; room.winner = null;
         } else {
           room.winner = c1 > c2 ? 1 : 2;
-          if (room.winner === 1) room.deck1.push(...room.pot);
-          else room.deck2.push(...room.pot);
-          room.status = 'playing';
-          room.pot = [];
+          const winnerDeck = room.winner === 1 ? room.deck1 : room.deck2;
+          winnerDeck.push(...room.pot);
+          room.pot = []; room.status = 'playing'; room.isWar = false;
         }
       } else {
-        // Stage 1: Standard Battle
+        // Stage 1: Normal Battle
         const c1 = room.deck1.shift();
         const c2 = room.deck2.shift();
         room.pot = [c1, c2];
+        room.p1Card = c1; room.p2Card = c2;
         room.history = [{ c1, c2, type: 'battle' }];
-        room.p1Card = c1;
-        room.p2Card = c2;
-
         if (c1 === c2) {
-          room.status = 'incident';
-          room.winner = null;
-          room.isWar = true;
+          room.status = 'incident'; room.isWar = true; room.winner = null;
         } else {
           room.winner = c1 > c2 ? 1 : 2;
-          if (room.winner === 1) room.deck1.push(...room.pot);
-          else room.deck2.push(...room.pot);
-          room.status = 'playing';
-          room.pot = [];
+          const winnerDeck = room.winner === 1 ? room.deck1 : room.deck2;
+          winnerDeck.push(...room.pot);
+          room.pot = []; room.status = 'playing';
         }
       }
 
       room.flips.clear();
-
       setTimeout(() => {
         room.resolving = false;
         io.to(roomId).emit('state-update', getPublicState(room));
-
         if (room.deck1.length === 0 || room.deck2.length === 0) {
           room.status = 'game-over';
           io.to(roomId).emit('state-update', getPublicState(room));
@@ -214,7 +185,7 @@ io.on('connection', (socket) => {
     };
 
     if (room.isSolo && room.flips.size === 1) {
-      room.resolving = true; 
+      room.resolving = true;
       setTimeout(() => {
         room.flips.set('BOT-AI', true);
         broadcastState();
@@ -226,9 +197,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('disconnect', () => {
-    leavePreviousRoom();
-  });
+  socket.on('disconnect', () => leavePreviousRoom());
 });
 
 const PORT = process.env.PORT || 3001;
