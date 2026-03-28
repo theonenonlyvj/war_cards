@@ -118,6 +118,16 @@ const App = () => {
 
       <div className="terminal-overlay">
         <p>&gt; STATUS: {gameState.status.toUpperCase()}</p>
+        {gameState.history.length > 1 && (
+          <div className="history-monitor">
+            <p>&gt; WAR DETECTED! ESCALATION LOG:</p>
+            {gameState.history.map((step: any, idx: number) => (
+              <p key={idx} style={{ paddingLeft: '20px', fontSize: '0.8rem' }}>
+                {step.type === 'battle' ? `> BATTLE: P1(${mapValue(step.c1)}) vs P2(${mapValue(step.c2)})` : `> REINFORCEMENTS: ${step.r1.length} cards deployed.`}
+              </p>
+            ))}
+          </div>
+        )}
         {gameState.winner && <p>&gt; LAST ROUND WINNER: PLAYER {gameState.winner}</p>}
         {gameState.status === 'game-over' && (
            <p className="game-over-alert">&gt; FINAL VICTORY: PLAYER {gameState.p1Count > 0 ? '1' : '2'}</p>
