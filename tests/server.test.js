@@ -1,3 +1,4 @@
+import { describe, test, beforeAll, afterAll, afterEach } from 'vitest';
 const { io } = require('socket.io-client');
 const { Server } = require('socket.io');
 const http = require('http');
