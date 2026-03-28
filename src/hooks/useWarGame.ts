@@ -4,6 +4,14 @@ import { io } from 'socket.io-client';
 const SOCKET_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 const socket = io(SOCKET_URL);
 
+interface HistoryStep {
+  type: 'battle' | 'war-reinforcements';
+  c1?: number;
+  c2?: number;
+  r1?: number[];
+  r2?: number[];
+}
+
 interface GameState {
   p1Count: number;
   p2Count: number;
@@ -14,7 +22,7 @@ interface GameState {
   isWar: boolean;
   winner: number | null;
   status: 'waiting' | 'playing' | 'game-over';
-  history: any[];
+  history: HistoryStep[];
   isSolo?: boolean;
 }
 

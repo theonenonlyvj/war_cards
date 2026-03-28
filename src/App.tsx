@@ -32,20 +32,17 @@ const App = () => {
               placeholder="SECTOR CODE"
               className="neon-input"
             />
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div className="join-actions">
               <button 
                 onClick={() => joinRoom(inputRoomId)}
                 className="neon-button"
                 disabled={!inputRoomId.trim()}
-                style={{ flex: 1 }}
               >
                 JOIN SECTOR
               </button>
               <button 
-                onClick={() => joinSolo(`SOLO-${inputRoomId}`)}
-                className="neon-button solo-mode-btn"
-                disabled={!inputRoomId.trim()}
-                style={{ flex: 1 }}
+                onClick={() => joinSolo(inputRoomId ? `SOLO-${inputRoomId}` : undefined)}
+                className="neon-button solo-btn"
               >
                 I'M LONELY
               </button>

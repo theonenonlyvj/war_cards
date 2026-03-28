@@ -319,6 +319,27 @@ body {
   cursor: not-allowed;
 }
 
+.join-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.join-actions .neon-button {
+  flex: 1;
+}
+
+.solo-btn {
+  border-color: var(--neon-magenta) !important;
+  color: var(--neon-magenta) !important;
+}
+
+.solo-btn:hover:not(:disabled) {
+  background: var(--neon-magenta) !important;
+  color: var(--bg-dark) !important;
+  box-shadow: 0 0 30px rgba(255, 0, 255, 0.6) !important;
+}
+
 .terminal-overlay {
   background: rgba(0, 20, 20, 0.9);
   border: 1px solid rgba(0, 243, 255, 0.3);

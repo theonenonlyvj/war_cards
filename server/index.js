@@ -31,10 +31,29 @@ function getPublicState(room) {
 }
 
 io.on('connection', (socket) => {
+  const leavePreviousRoom = () => {
+    if (socket.roomId) {
+      socket.leave(socket.roomId);
+      const room = rooms.get(socket.roomId);
+      if (room) {
+        room.players = room.players.filter(id => id !== socket.id);
+        if (room.players.length === 0 || (room.isSolo && room.players.length === 1 && room.players[0] === 'BOT-AI')) {
+          rooms.delete(socket.roomId);
+        } else {
+          room.status = 'waiting';
+          io.to(socket.roomId).emit('player-left');
+        }
+      }
+      socket.roomId = null;
+    }
+  };
+
   socket.on('join-room', (roomId) => {
     if (typeof roomId !== 'string' || roomId.trim() === '') {
       return socket.emit('error', 'Invalid room ID');
     }
+
+    leavePreviousRoom();
 
     socket.join(roomId);
     if (!rooms.has(roomId)) {
@@ -64,32 +83,37 @@ io.on('connection', (socket) => {
   });
 
   socket.on('join-solo', (providedRoomId) => {
+    leavePreviousRoom();
+
     const roomId = providedRoomId || `SOLO-${socket.id.substring(0, 6)}`;
     socket.join(roomId);
+    
     const { deck1, deck2 } = distributeDecks();
     rooms.set(roomId, { 
       players: [socket.id, 'BOT-AI'], 
-      deck1, deck2, 
+      deck1, 
+      deck2, 
       flips: new Map(), 
       status: 'playing',
       isSolo: true 
     });
+    
     socket.roomId = roomId;
     socket.playerIndex = 1;
     socket.emit('player-index', 1);
+    io.to(roomId).emit('game-ready');
     io.to(roomId).emit('state-update', getPublicState(rooms.get(roomId)));
   });
 
   socket.on('flip-card', ({ roomId }) => {
     const room = rooms.get(roomId);
-    if (!room || room.status !== 'playing') return;
+    if (!room || room.status !== 'playing' || room.resolving) return;
 
     if (room.flips.has(socket.id)) return; // Prevents double flip
 
     room.flips.set(socket.id, true);
 
     const broadcastState = () => {
-      // Update all clients that a player has flipped
       io.to(roomId).emit('state-update', { 
         ...getPublicState(room), 
         p1Flipped: room.flips.has(room.players[0]),
@@ -100,7 +124,6 @@ io.on('connection', (socket) => {
     broadcastState();
 
     const resolve = () => {
-      if (room.resolving) return; // Safeguard
       room.resolving = true;
 
       if (room.deck1.length === 0 || room.deck2.length === 0) {
@@ -110,10 +133,8 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Keep track of cards for UI
       const c1 = room.deck1[0];
       const c2 = room.deck2[0];
-      
       const result = resolveRound(room.deck1, room.deck2);
       
       room.p1Card = c1;
@@ -128,10 +149,8 @@ io.on('connection', (socket) => {
         room.deck2.push(...result.pot);
       }
 
-      // Reset flips for next round
       room.flips.clear();
 
-      // Delay the result slightly for visual effect
       setTimeout(() => {
         room.resolving = false;
         io.to(roomId).emit('state-update', getPublicState(room));
@@ -144,11 +163,11 @@ io.on('connection', (socket) => {
     };
 
     if (room.isSolo && room.flips.size === 1) {
-      room.resolving = true; // Mark as resolving to block further flips
+      room.resolving = true; // Block further flips until bot "thinks"
       setTimeout(() => {
         room.flips.set('BOT-AI', true);
         broadcastState();
-        room.resolving = false; // Temporarily allow resolve
+        room.resolving = false;
         resolve();
       }, 500);
     } else if (room.flips.size === 2) {
@@ -157,17 +176,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    if (socket.roomId && rooms.has(socket.roomId)) {
-      const room = rooms.get(socket.roomId);
-      room.players = room.players.filter(id => id !== socket.id);
-      
-      if (room.players.length === 0 || (room.isSolo && room.players.length === 1 && room.players[0] === 'BOT-AI')) {
-        rooms.delete(socket.roomId);
-      } else {
-        room.status = 'waiting';
-        io.to(socket.roomId).emit('player-left');
-      }
-    }
+    leavePreviousRoom();
   });
 });
 
