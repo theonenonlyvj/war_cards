@@ -101,6 +101,7 @@ io.on('connection', (socket) => {
     socket.roomId = roomId;
     socket.playerIndex = 1;
     socket.emit('player-index', 1);
+    socket.emit('room-id', roomId); // Tell client the actual ID used
     io.to(roomId).emit('game-ready');
     io.to(roomId).emit('state-update', getPublicState(rooms.get(roomId)));
   });

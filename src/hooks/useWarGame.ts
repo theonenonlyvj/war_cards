@@ -34,11 +34,13 @@ export const useWarGame = () => {
   useEffect(() => {
     socket.on('state-update', (state) => setGameState(state));
     socket.on('player-index', (index) => setPlayerIndex(index));
+    socket.on('room-id', (id) => setRoomId(id)); // Sync Room ID with server
     socket.on('game-ready', () => console.log('Game Ready!'));
     
     return () => {
       socket.off('state-update');
       socket.off('player-index');
+      socket.off('room-id');
       socket.off('game-ready');
     };
   }, []);
@@ -50,13 +52,16 @@ export const useWarGame = () => {
   };
 
   const joinRoom = (rId: string) => {
+    console.log('Joining Room:', rId);
     setRoomId(rId);
     socket.emit('join-room', rId);
   };
 
-  const joinSolo = (rId: string) => {
-    setRoomId(rId);
-    socket.emit('join-solo', rId);
+  const joinSolo = (rId?: string) => {
+    const finalId = rId || `SOLO-TEMP-${Math.random().toString(36).substring(7)}`;
+    console.log('Joining Solo:', finalId);
+    setRoomId(finalId);
+    socket.emit('join-solo', rId); // Pass original rId (can be undefined) to server
   };
 
   return { gameState, flip, playerIndex, joinRoom, joinSolo, roomId };
