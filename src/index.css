@@ -126,6 +126,70 @@ body {
   opacity: 0.7;
 }
 
+.controls {
+  position: fixed;
+  bottom: 50px;
+  right: 50px;
+  z-index: 10;
+}
+
+.neon-button {
+  background: transparent;
+  border: 2px solid var(--neon-cyan);
+  color: var(--neon-cyan);
+  padding: 15px 30px;
+  font-family: inherit;
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.neon-button:hover:not(:disabled) {
+  background: var(--neon-cyan);
+  color: var(--bg-dark);
+  box-shadow: 0 0 20px rgba(0, 243, 255, 0.6);
+}
+
+.neon-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.battle-zone-content {
+  display: flex;
+  gap: 50px;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.card-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.slot-label {
+  font-size: 0.8rem;
+  opacity: 0.6;
+  text-transform: uppercase;
+}
+
+.game-over-alert {
+  color: var(--neon-magenta);
+  font-weight: bold;
+  animation: pulse-magenta 1s infinite alternate;
+}
+
+@keyframes pulse-magenta {
+  from { opacity: 1; text-shadow: 0 0 10px var(--neon-magenta); }
+  to { opacity: 0.7; text-shadow: 0 0 20px var(--neon-magenta); }
+}
+
 @keyframes scan {
   0% { top: 0%; }
   100% { top: 100%; }

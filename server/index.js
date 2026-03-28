@@ -1,12 +1,25 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const { distributeDecks, resolveRound } = require('./gameLogic');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 const rooms = new Map(); // Room ID -> Game State
+
+function getPublicState(room) {
+  return {
+    p1Count: room.deck1 ? room.deck1.length : 0,
+    p2Count: room.deck2 ? room.deck2.length : 0,
+    p1Card: room.p1Card || null,
+    p2Card: room.p2Card || null,
+    isWar: room.isWar || false,
+    winner: room.winner || null,
+    status: room.status
+  };
+}
 
 io.on('connection', (socket) => {
   socket.on('join-room', (roomId) => {
@@ -16,7 +29,7 @@ io.on('connection', (socket) => {
 
     socket.join(roomId);
     if (!rooms.has(roomId)) {
-      rooms.set(roomId, { players: [], deck: [], status: 'waiting' });
+      rooms.set(roomId, { players: [], deck1: [], deck2: [], status: 'waiting' });
     }
     
     const room = rooms.get(roomId);
@@ -26,11 +39,50 @@ io.on('connection', (socket) => {
     }
 
     room.players.push(socket.id);
-    socket.roomId = roomId; // Store room ID on socket for disconnect handling
+    socket.roomId = roomId;
 
     if (room.players.length === 2) {
-      room.status = 'ready';
+      const { deck1, deck2 } = distributeDecks();
+      room.deck1 = deck1;
+      room.deck2 = deck2;
+      room.status = 'playing';
       io.to(roomId).emit('game-ready');
+      io.to(roomId).emit('state-update', getPublicState(room));
+    }
+  });
+
+  socket.on('flip-card', ({ roomId }) => {
+    const room = rooms.get(roomId);
+    if (!room || room.status !== 'playing') return;
+
+    if (room.deck1.length === 0 || room.deck2.length === 0) {
+      room.status = 'game-over';
+      io.to(roomId).emit('state-update', getPublicState(room));
+      return;
+    }
+
+    // Keep track of cards for UI
+    const c1 = room.deck1[0];
+    const c2 = room.deck2[0];
+    
+    const result = resolveRound(room.deck1, room.deck2);
+    
+    room.p1Card = c1;
+    room.p2Card = c2;
+    room.winner = result.winner;
+    room.isWar = result.pot.length > 2;
+
+    if (result.winner === 1) {
+      room.deck1.push(...result.pot);
+    } else if (result.winner === 2) {
+      room.deck2.push(...result.pot);
+    }
+
+    io.to(roomId).emit('state-update', getPublicState(room));
+
+    if (room.deck1.length === 0 || room.deck2.length === 0) {
+      room.status = 'game-over';
+      io.to(roomId).emit('state-update', getPublicState(room));
     }
   });
 
