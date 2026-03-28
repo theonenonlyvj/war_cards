@@ -80,6 +80,7 @@ const App = () => {
   };
 
   const isLocalReady = playerIndex === 1 ? gameState.p1Flipped : gameState.p2Flipped;
+  const isEngagementActive = ['playing', 'game-over', 'incident', 'deployment'].includes(gameState.status);
 
   return (
     <div className={`command-center ${gameState.isWar ? 'emergency-state' : ''}`}>
@@ -88,7 +89,7 @@ const App = () => {
       
       <main className="main-display">
         <BattleZone>
-          {gameState.status === 'playing' || gameState.status === 'game-over' || gameState.status === 'incident' ? (
+          {isEngagementActive ? (
             <div className="cards-container">
               <div className="card-slot">
                 <div className="slot-stack">
@@ -155,19 +156,25 @@ const App = () => {
       <div className="controls">
          <button 
            onClick={flip} 
-           className={`neon-button ${gameState.status === 'incident' ? 'solo-btn' : ''}`}
-           disabled={(gameState.status !== 'playing' && gameState.status !== 'incident') || isLocalReady}
+           className={`neon-button ${['incident', 'deployment'].includes(gameState.status) ? 'solo-btn' : ''}`}
+           disabled={!['playing', 'incident', 'deployment'].includes(gameState.status) || isLocalReady}
          >
             {isLocalReady ? 'WAITING FOR SYNC...' : 
-             gameState.status === 'incident' ? 'DEPLOY REINFORCEMENTS' : 'INITIATE ENGAGEMENT (FLIP)'}
+             gameState.status === 'incident' ? 'DEPLOY REINFORCEMENTS' : 
+             gameState.status === 'deployment' ? 'INITIATE FINAL ENGAGEMENT' :
+             'INITIATE ENGAGEMENT (FLIP)'}
          </button>
       </div>
 
       <div className="terminal-overlay status-log">
         <p>&gt; STATUS: {gameState.status.toUpperCase()}</p>
-        {gameState.history.length > 1 && (
+        {gameState.history.length > 0 && (
           <div className="history-monitor">
-            <p>&gt; WAR DETECTED! ESCALATION LOG:</p>
+            {gameState.status === 'incident' || gameState.status === 'deployment' ? (
+              <p className="game-over-alert">&gt; WAR DETECTED! ESCALATION LOG:</p>
+            ) : (
+              <p>&gt; LAST ENGAGEMENT LOG:</p>
+            )}
             {gameState.history.map((step: any, idx: number) => (
               <p key={idx} style={{ paddingLeft: '20px', fontSize: '0.8rem' }}>
                 {step.type === 'battle' ? `> BATTLE: P1(${mapValue(step.c1)}) vs P2(${mapValue(step.c2)})` : `> REINFORCEMENTS: ${step.r1.length} cards deployed.`}
