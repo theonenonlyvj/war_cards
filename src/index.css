@@ -21,13 +21,17 @@ body {
   margin: 0;
   overflow: hidden;
   height: 100vh;
+  height: 100dvh; /* Use dynamic viewport height for mobile browsers */
 }
 
 .command-center {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   padding: 10px;
+  padding-top: env(safe-area-inset-top, 10px); /* Respect notch/status bar */
+  padding-bottom: env(safe-area-inset-bottom, 10px);
   box-sizing: border-box;
   background: radial-gradient(circle at center, #111 0%, #000 100%);
   border: 1px solid rgba(0, 243, 255, 0.1);
