@@ -8,7 +8,7 @@ import { FXLayer } from './components/FXLayer';
 const App = () => {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [inputRoomId, setInputRoomId] = useState('');
-  const { gameState, flip } = useWarGame(roomId || '');
+  const { gameState, flip, playerIndex } = useWarGame(roomId || '');
   const [showFX, setShowFX] = useState(false);
 
   useEffect(() => {
@@ -25,7 +25,7 @@ const App = () => {
         <div className="terminal-overlay">
           <p>&gt; VWAR COMMAND CENTER INITIALIZED.</p>
           <p>&gt; ENTER SECTOR CODE TO JOIN BATTLE:</p>
-          <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '20px' }}>
             <input 
               type="text" 
               value={inputRoomId} 
@@ -67,6 +67,8 @@ const App = () => {
     return v.toString();
   };
 
+  const isLocalReady = playerIndex === 1 ? gameState.p1Flipped : gameState.p2Flipped;
+
   return (
     <div className="command-center">
       <FXLayer trigger={showFX} />
@@ -75,29 +77,29 @@ const App = () => {
       <main className="main-display">
         <BattleZone>
           {gameState.status === 'playing' || gameState.status === 'game-over' ? (
-            <>
+            <div className="cards-container">
               <div className="card-slot">
                 {gameState.p1Card ? (
-                  <Card value={mapValue(gameState.p1Card)} suit="S" isFaceUp={true} />
+                  <Card value={mapValue(gameState.p1Card)} suit="&spades;" isFaceUp={true} />
                 ) : (
                   <div className="holographic-card" style={{ opacity: gameState.p1Flipped ? 0.6 : 0.2 }}>
                     {gameState.p1Flipped && <div className="scanning-line" />}
                   </div>
                 )}
-                <p className="slot-label">P1 COMMANDER {gameState.p1Flipped ? '[READY]' : ''}</p>
+                <p className="slot-label">P1 {gameState.p1Flipped ? '[READY]' : ''}</p>
               </div>
 
               <div className="card-slot">
                 {gameState.p2Card ? (
-                  <Card value={mapValue(gameState.p2Card)} suit="H" isFaceUp={true} />
+                  <Card value={mapValue(gameState.p2Card)} suit="&hearts;" isFaceUp={true} />
                 ) : (
                   <div className="holographic-card" style={{ opacity: gameState.p2Flipped ? 0.6 : 0.2 }}>
                     {gameState.p2Flipped && <div className="scanning-line" />}
                   </div>
                 )}
-                <p className="slot-label">P2 COMMANDER {gameState.p2Flipped ? '[READY]' : ''}</p>
+                <p className="slot-label">P2 {gameState.p2Flipped ? '[READY]' : ''}</p>
               </div>
-            </>
+            </div>
           ) : (
             <div className="terminal-overlay">
                <p>&gt; WAITING FOR SECOND PLAYER TO JOIN...</p>
@@ -110,13 +112,13 @@ const App = () => {
          <button 
            onClick={flip} 
            className="neon-button" 
-           disabled={gameState.status !== 'playing' || (gameState.p1Flipped && gameState.p2Flipped)}
+           disabled={gameState.status !== 'playing' || isLocalReady}
          >
-            {gameState.p1Flipped || gameState.p2Flipped ? 'WAITING FOR SYNC...' : 'INITIATE ENGAGEMENT (FLIP)'}
+            {isLocalReady ? 'WAITING FOR SYNC...' : 'INITIATE ENGAGEMENT (FLIP)'}
          </button>
       </div>
 
-      <div className="terminal-overlay">
+      <div className="terminal-overlay status-log">
         <p>&gt; STATUS: {gameState.status.toUpperCase()}</p>
         {gameState.history.length > 1 && (
           <div className="history-monitor">

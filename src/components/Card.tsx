@@ -14,6 +14,11 @@ export const Card = ({ value, suit, isFaceUp }: CardProps) => (
     animate={{ rotateY: isFaceUp ? 0 : 180 }}
   >
     <div className="scanning-line" />
-    {isFaceUp && <span className="card-value">{value}{suit}</span>}
+    {isFaceUp && (
+      <div className="card-value">
+        {value}
+        <span className="card-symbol" dangerouslySetInnerHTML={{ __html: suit }} />
+      </div>
+    )}
   </motion.div>
 );
