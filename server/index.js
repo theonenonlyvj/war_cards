@@ -108,7 +108,7 @@ io.on('connection', (socket) => {
 
   socket.on('flip-card', ({ roomId }) => {
     const room = rooms.get(roomId);
-    if (!room || room.status !== 'playing' || room.resolving) return;
+    if (!room || (room.status !== 'playing' && room.status !== 'incident') || room.resolving) return;
 
     if (room.flips.has(socket.id)) return; // Prevents double flip
 
