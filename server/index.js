@@ -62,20 +62,43 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('join-solo', () => {
+    const roomId = `SOLO-${socket.id.substring(0, 6)}`;
+    socket.join(roomId);
+    const { deck1, deck2 } = distributeDecks();
+    rooms.set(roomId, { 
+      players: [socket.id, 'BOT-AI'], 
+      deck1, deck2, 
+      flips: new Map(), 
+      status: 'playing',
+      isSolo: true 
+    });
+    socket.roomId = roomId;
+    socket.playerIndex = 1;
+    socket.emit('player-index', 1);
+    io.to(roomId).emit('state-update', getPublicState(rooms.get(roomId)));
+  });
+
   socket.on('flip-card', ({ roomId }) => {
     const room = rooms.get(roomId);
     if (!room || room.status !== 'playing') return;
 
+    if (room.flips.has(socket.id)) return; // Prevents double flip
+
     room.flips.set(socket.id, true);
 
-    // Update all clients that a player has flipped
-    io.to(roomId).emit('state-update', { 
-      ...getPublicState(room), 
-      p1Flipped: room.flips.has(room.players[0]),
-      p2Flipped: room.flips.has(room.players[1])
-    });
+    const broadcastState = () => {
+      // Update all clients that a player has flipped
+      io.to(roomId).emit('state-update', { 
+        ...getPublicState(room), 
+        p1Flipped: room.flips.has(room.players[0]),
+        p2Flipped: room.flips.has(room.players[1])
+      });
+    };
 
-    if (room.flips.size === 2) {
+    broadcastState();
+
+    const resolve = () => {
       if (room.deck1.length === 0 || room.deck2.length === 0) {
         room.status = 'game-over';
         io.to(roomId).emit('state-update', getPublicState(room));
@@ -112,6 +135,16 @@ io.on('connection', (socket) => {
           io.to(roomId).emit('state-update', getPublicState(room));
         }
       }, 1000);
+    };
+
+    if (room.isSolo && room.flips.size === 1) {
+      setTimeout(() => {
+        room.flips.set('BOT-AI', true);
+        broadcastState();
+        resolve();
+      }, 500);
+    } else if (room.flips.size === 2) {
+      resolve();
     }
   });
 
