@@ -139,37 +139,48 @@ io.on('connection', (socket) => {
         const r2 = room.deck2.splice(0, Math.min(room.deck2.length - 1, 3));
         room.pot.push(...r1, ...r2);
         room.history.push({ r1, r2, type: 'war-reinforcements' });
-        room.p1Card = null; room.p2Card = null;
+        room.p1Card = null; 
+        room.p2Card = null;
         room.status = 'deployment';
+        room.isWar = false; // Stop siren and emergency visuals
       } else if (room.status === 'deployment') {
         // Stage 3: The Reveal
         const c1 = room.deck1.shift();
         const c2 = room.deck2.shift();
         room.pot.push(c1, c2);
-        room.p1Card = c1; room.p2Card = c2;
+        room.p1Card = c1; 
+        room.p2Card = c2;
         room.history.push({ c1, c2, type: 'battle' });
         if (c1 === c2) {
-          room.status = 'incident'; room.isWar = true; room.winner = null;
+          room.status = 'incident'; 
+          room.isWar = true; 
+          room.winner = null;
         } else {
           room.winner = c1 > c2 ? 1 : 2;
           const winnerDeck = room.winner === 1 ? room.deck1 : room.deck2;
           winnerDeck.push(...room.pot);
-          room.pot = []; room.status = 'playing'; room.isWar = false;
+          room.pot = []; 
+          room.status = 'playing'; 
+          room.isWar = false;
         }
       } else {
         // Stage 1: Normal Battle
         const c1 = room.deck1.shift();
         const c2 = room.deck2.shift();
         room.pot = [c1, c2];
-        room.p1Card = c1; room.p2Card = c2;
+        room.p1Card = c1; 
+        room.p2Card = c2;
         room.history = [{ c1, c2, type: 'battle' }];
         if (c1 === c2) {
-          room.status = 'incident'; room.isWar = true; room.winner = null;
+          room.status = 'incident'; 
+          room.isWar = true; 
+          room.winner = null;
         } else {
           room.winner = c1 > c2 ? 1 : 2;
           const winnerDeck = room.winner === 1 ? room.deck1 : room.deck2;
           winnerDeck.push(...room.pot);
-          room.pot = []; room.status = 'playing';
+          room.pot = []; 
+          room.status = 'playing';
         }
       }
 
