@@ -113,6 +113,15 @@ io.on('connection', (socket) => {
 
     room.flips.set(socket.id, true);
 
+    // Clear previous cards if this is the start of a new round
+    if (room.flips.size === 1) {
+      room.p1Card = null;
+      room.p2Card = null;
+      room.winner = null;
+      room.isWar = false;
+      room.history = [];
+    }
+
     const broadcastState = () => {
       io.to(roomId).emit('state-update', { 
         ...getPublicState(room), 
