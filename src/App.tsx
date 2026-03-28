@@ -80,18 +80,22 @@ const App = () => {
                 {gameState.p1Card ? (
                   <Card value={mapValue(gameState.p1Card)} suit="S" isFaceUp={true} />
                 ) : (
-                  <div className="holographic-card" style={{ opacity: 0.2 }} />
+                  <div className="holographic-card" style={{ opacity: gameState.p1Flipped ? 0.6 : 0.2 }}>
+                    {gameState.p1Flipped && <div className="scanning-line" />}
+                  </div>
                 )}
-                <p className="slot-label">P1 COMMANDER</p>
+                <p className="slot-label">P1 COMMANDER {gameState.p1Flipped ? '[READY]' : ''}</p>
               </div>
 
               <div className="card-slot">
                 {gameState.p2Card ? (
                   <Card value={mapValue(gameState.p2Card)} suit="H" isFaceUp={true} />
                 ) : (
-                  <div className="holographic-card" style={{ opacity: 0.2 }} />
+                  <div className="holographic-card" style={{ opacity: gameState.p2Flipped ? 0.6 : 0.2 }}>
+                    {gameState.p2Flipped && <div className="scanning-line" />}
+                  </div>
                 )}
-                <p className="slot-label">P2 COMMANDER</p>
+                <p className="slot-label">P2 COMMANDER {gameState.p2Flipped ? '[READY]' : ''}</p>
               </div>
             </>
           ) : (
@@ -106,9 +110,9 @@ const App = () => {
          <button 
            onClick={flip} 
            className="neon-button" 
-           disabled={gameState.status !== 'playing'}
+           disabled={gameState.status !== 'playing' || (gameState.p1Flipped && gameState.p2Flipped)}
          >
-            INITIATE ENGAGEMENT (FLIP)
+            {gameState.p1Flipped || gameState.p2Flipped ? 'WAITING FOR SYNC...' : 'INITIATE ENGAGEMENT (FLIP)'}
          </button>
       </div>
 

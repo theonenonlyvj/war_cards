@@ -15,6 +15,8 @@ function getPublicState(room) {
     p2Count: room.deck2 ? room.deck2.length : 0,
     p1Card: room.p1Card || null,
     p2Card: room.p2Card || null,
+    p1Flipped: room.flips ? room.flips.has(room.players[0]) : false,
+    p2Flipped: room.flips ? room.flips.has(room.players[1]) : false,
     isWar: room.isWar || false,
     winner: room.winner || null,
     status: room.status
@@ -45,6 +47,7 @@ io.on('connection', (socket) => {
       const { deck1, deck2 } = distributeDecks();
       room.deck1 = deck1;
       room.deck2 = deck2;
+      room.flips = new Map(); // Track which player has flipped
       room.status = 'playing';
       io.to(roomId).emit('game-ready');
       io.to(roomId).emit('state-update', getPublicState(room));
@@ -55,34 +58,51 @@ io.on('connection', (socket) => {
     const room = rooms.get(roomId);
     if (!room || room.status !== 'playing') return;
 
-    if (room.deck1.length === 0 || room.deck2.length === 0) {
-      room.status = 'game-over';
-      io.to(roomId).emit('state-update', getPublicState(room));
-      return;
-    }
+    room.flips.set(socket.id, true);
 
-    // Keep track of cards for UI
-    const c1 = room.deck1[0];
-    const c2 = room.deck2[0];
-    
-    const result = resolveRound(room.deck1, room.deck2);
-    
-    room.p1Card = c1;
-    room.p2Card = c2;
-    room.winner = result.winner;
-    room.isWar = result.pot.length > 2;
+    // Update all clients that a player has flipped
+    io.to(roomId).emit('state-update', { 
+      ...getPublicState(room), 
+      p1Flipped: room.flips.has(room.players[0]),
+      p2Flipped: room.flips.has(room.players[1])
+    });
 
-    if (result.winner === 1) {
-      room.deck1.push(...result.pot);
-    } else if (result.winner === 2) {
-      room.deck2.push(...result.pot);
-    }
+    if (room.flips.size === 2) {
+      if (room.deck1.length === 0 || room.deck2.length === 0) {
+        room.status = 'game-over';
+        io.to(roomId).emit('state-update', getPublicState(room));
+        return;
+      }
 
-    io.to(roomId).emit('state-update', getPublicState(room));
+      // Keep track of cards for UI
+      const c1 = room.deck1[0];
+      const c2 = room.deck2[0];
+      
+      const result = resolveRound(room.deck1, room.deck2);
+      
+      room.p1Card = c1;
+      room.p2Card = c2;
+      room.winner = result.winner;
+      room.isWar = result.pot.length > 2;
 
-    if (room.deck1.length === 0 || room.deck2.length === 0) {
-      room.status = 'game-over';
-      io.to(roomId).emit('state-update', getPublicState(room));
+      if (result.winner === 1) {
+        room.deck1.push(...result.pot);
+      } else if (result.winner === 2) {
+        room.deck2.push(...result.pot);
+      }
+
+      // Reset flips for next round
+      room.flips.clear();
+
+      // Delay the result slightly for visual effect
+      setTimeout(() => {
+        io.to(roomId).emit('state-update', getPublicState(room));
+
+        if (room.deck1.length === 0 || room.deck2.length === 0) {
+          room.status = 'game-over';
+          io.to(roomId).emit('state-update', getPublicState(room));
+        }
+      }, 1000);
     }
   });
 
