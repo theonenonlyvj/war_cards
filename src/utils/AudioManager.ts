@@ -4,6 +4,7 @@ class AudioManager {
   private lfo: OscillatorNode | null = null;
   private gainNode: GainNode | null = null;
   private isPlaying: boolean = false;
+  private stopTimeout: number | null = null;
 
   private init() {
     if (!this.audioCtx) {
@@ -20,26 +21,25 @@ class AudioManager {
       await this.audioCtx.resume();
     }
 
+    if (this.stopTimeout) {
+      clearTimeout(this.stopTimeout);
+      this.stopTimeout = null;
+    }
+
     this.isPlaying = true;
     
-    // Create oscillator
     this.oscillator = this.audioCtx.createOscillator();
     this.gainNode = this.audioCtx.createGain();
 
     this.oscillator.type = 'sawtooth';
     this.oscillator.frequency.setValueAtTime(440, this.audioCtx.currentTime);
     
-    // Frequency modulation for siren effect
-    this.oscillator.frequency.exponentialRampToValueAtTime(880, this.audioCtx.currentTime + 0.5);
-    this.oscillator.frequency.exponentialRampToValueAtTime(440, this.audioCtx.currentTime + 1.0);
-    
-    // Loop the frequency modulation
     this.lfo = this.audioCtx.createOscillator();
     this.lfo.type = 'triangle';
-    this.lfo.frequency.value = 1; // 1Hz modulation
+    this.lfo.frequency.value = 1;
     
     const lfoGain = this.audioCtx.createGain();
-    lfoGain.gain.value = 440; // Frequency range
+    lfoGain.gain.value = 440;
     
     this.lfo.connect(lfoGain);
     lfoGain.connect(this.oscillator.frequency);
@@ -57,9 +57,13 @@ class AudioManager {
   public stopSiren() {
     if (!this.isPlaying) return;
     
+    if (this.stopTimeout) {
+      clearTimeout(this.stopTimeout);
+    }
+
     if (this.gainNode && this.audioCtx) {
       this.gainNode.gain.linearRampToValueAtTime(0, this.audioCtx.currentTime + 0.5);
-      setTimeout(() => {
+      this.stopTimeout = window.setTimeout(() => {
         if (this.oscillator) {
           this.oscillator.stop();
           this.oscillator.disconnect();
@@ -75,6 +79,7 @@ class AudioManager {
           this.gainNode = null;
         }
         this.isPlaying = false;
+        this.stopTimeout = null;
       }, 500);
     }
   }

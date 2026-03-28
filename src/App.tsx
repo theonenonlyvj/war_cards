@@ -82,7 +82,7 @@ const App = () => {
   const isLocalReady = playerIndex === 1 ? gameState.p1Flipped : gameState.p2Flipped;
 
   return (
-    <div className={`command-center ${gameState.isWar ? 'emergency-glitch emergency-shake' : ''}`}>
+    <div className={`command-center ${gameState.isWar ? 'emergency-state' : ''}`}>
       <FXLayer trigger={showFX} />
       <HUD p1Count={gameState.p1Count} p2Count={gameState.p2Count} isWar={gameState.isWar} />
       
