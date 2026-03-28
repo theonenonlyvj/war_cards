@@ -29,27 +29,34 @@ function distributeDecks() {
   };
 }
 
-function resolveRound(deck1, deck2, pot = []) {
+function resolveRound(deck1, deck2, pot = [], history = []) {
   const c1 = deck1.shift();
   const c2 = deck2.shift();
   const currentPot = [...pot, c1, c2];
+  const roundHistory = [...history, { c1, c2, type: 'battle' }];
 
-  if (c1 > c2) return { winner: 1, pot: currentPot };
-  if (c2 > c1) return { winner: 2, pot: currentPot };
+  if (c1 > c2) return { winner: 1, pot: currentPot, history: roundHistory };
+  if (c2 > c1) return { winner: 2, pot: currentPot, history: roundHistory };
 
   // War Logic (Tie)
   // House Rule: The Last Stand - If not enough cards, use the last one as the battle card
   if (deck1.length === 0 || deck2.length === 0) {
-     // One player is out of cards during a tie.
-     // Depending on house rules, we might need to handle this.
-     // In our case, if they are tied and one has no cards left, 
-     // the one with no cards left loses.
-     return { winner: deck1.length === 0 ? 2 : 1, pot: currentPot };
+     if (deck1.length === 0 && deck2.length === 0) {
+       return { winner: 0, pot: currentPot, history: roundHistory }; 
+     }
+     return { winner: deck1.length === 0 ? 2 : 1, pot: currentPot, history: roundHistory };
   }
 
   const reinforcements1 = deck1.splice(0, Math.min(deck1.length - 1, 3));
   const reinforcements2 = deck2.splice(0, Math.min(deck2.length - 1, 3));
-  return resolveRound(deck1, deck2, [...currentPot, ...reinforcements1, ...reinforcements2]);
+  
+  const warHistory = [...roundHistory, { 
+    r1: reinforcements1, 
+    r2: reinforcements2, 
+    type: 'war-reinforcements' 
+  }];
+
+  return resolveRound(deck1, deck2, [...currentPot, ...reinforcements1, ...reinforcements2], warHistory);
 }
 
 module.exports = {

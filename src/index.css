@@ -190,6 +190,13 @@ body {
   text-transform: uppercase;
 }
 
+.history-monitor {
+  border-left: 2px solid var(--neon-magenta);
+  margin: 10px 0;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
 .game-over-alert {
   color: var(--neon-magenta);
   font-weight: bold;

@@ -19,7 +19,8 @@ function getPublicState(room) {
     p2Flipped: room.flips ? room.flips.has(room.players[1]) : false,
     isWar: room.isWar || false,
     winner: room.winner || null,
-    status: room.status
+    status: room.status,
+    history: room.history || []
   };
 }
 
@@ -84,6 +85,7 @@ io.on('connection', (socket) => {
       room.p2Card = c2;
       room.winner = result.winner;
       room.isWar = result.pot.length > 2;
+      room.history = result.history;
 
       if (result.winner === 1) {
         room.deck1.push(...result.pot);
