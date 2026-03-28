@@ -19,17 +19,21 @@ interface GameState {
 
 export const useWarGame = (roomId: string) => {
   const [gameState, setGameState] = useState<GameState | null>(null);
+  const [playerIndex, setPlayerIndex] = useState<number | null>(null);
+
   useEffect(() => {
     socket.emit('join-room', roomId);
     socket.on('state-update', (state) => setGameState(state));
+    socket.on('player-index', (index) => setPlayerIndex(index));
     socket.on('game-ready', () => console.log('Game Ready!'));
     
     return () => {
       socket.off('state-update');
+      socket.off('player-index');
       socket.off('game-ready');
     };
   }, [roomId]);
 
   const flip = () => socket.emit('flip-card', { roomId });
-  return { gameState, flip };
+  return { gameState, flip, playerIndex };
 };

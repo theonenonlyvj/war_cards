@@ -48,6 +48,8 @@ io.on('connection', (socket) => {
 
     room.players.push(socket.id);
     socket.roomId = roomId;
+    socket.playerIndex = room.players.length; // 1 or 2
+    socket.emit('player-index', socket.playerIndex);
 
     if (room.players.length === 2) {
       const { deck1, deck2 } = distributeDecks();
