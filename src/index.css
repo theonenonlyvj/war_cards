@@ -41,11 +41,12 @@ body {
 .hud-container {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: 10px 15px;
   border-bottom: 2px solid var(--neon-cyan);
   box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 1px;
   font-weight: bold;
 }
 
@@ -55,8 +56,66 @@ body {
   animation: pulse-red 1s infinite alternate;
 }
 
-.status-monitor {
+.hud-side {
+  flex: 1;
+}
+
+.p2-side {
+  text-align: right;
+}
+
+.hud-center {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.power-balance-container {
+  width: 100%;
+  max-width: 300px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  overflow: hidden;
+  border: 1px solid rgba(0, 243, 255, 0.3);
+}
+
+.power-bar {
+  height: 100%;
+  transition: width 0.5s ease-in-out;
+}
+
+.p1-bar {
+  background: var(--neon-cyan);
+  box-shadow: 0 0 10px var(--neon-cyan);
+}
+
+.p2-bar {
+  background: var(--neon-magenta);
+  box-shadow: 0 0 10px var(--neon-magenta);
+}
+
+.deck-count {
   font-size: 1rem;
+  opacity: 0.7;
+  transition: all 0.3s ease;
+}
+
+.deck-count.advantage {
+  opacity: 1;
+  transform: scale(1.1);
+  text-shadow: 0 0 10px var(--neon-cyan);
+}
+
+.p2-side .deck-count.advantage {
+  text-shadow: 0 0 10px var(--neon-magenta);
+}
+
+.status-monitor {
+  font-size: 0.8rem;
+  letter-spacing: 2px;
 }
 
 .main-display {

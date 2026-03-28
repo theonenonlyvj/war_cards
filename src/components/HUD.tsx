@@ -6,10 +6,33 @@ interface HUDProps {
   isWar: boolean;
 }
 
-export const HUD = ({ p1Count, p2Count, isWar }: HUDProps) => (
-  <div className={`hud-container ${isWar ? 'emergency' : ''}`}>
-    <div className="p1-deck">CARDS: {p1Count}</div>
-    <div className="status-monitor">{isWar ? 'EMERGENCY: WAR DETECTED' : 'SYSTEMS NOMINAL'}</div>
-    <div className="p2-deck">CARDS: {p2Count}</div>
-  </div>
-);
+export const HUD = ({ p1Count, p2Count, isWar }: HUDProps) => {
+  const total = p1Count + p2Count || 52;
+  const p1Ratio = (p1Count / total) * 100;
+  
+  return (
+    <div className={`hud-container ${isWar ? 'emergency' : ''}`}>
+      <div className="hud-side p1-side">
+        <div className={`deck-count ${p1Count > p2Count ? 'advantage' : ''}`}>
+          <span className="label">P1 FORCE:</span> {p1Count}
+        </div>
+      </div>
+
+      <div className="hud-center">
+        <div className="power-balance-container">
+          <div className="power-bar p1-bar" style={{ width: `${p1Ratio}%` }} />
+          <div className="power-bar p2-bar" style={{ width: `${100 - p1Ratio}%` }} />
+        </div>
+        <div className="status-monitor">
+          {isWar ? 'WAR ESCALATION' : p1Count === p2Count ? 'FORCES EQUAL' : p1Count > p2Count ? 'P1 DOMINANCE' : 'P2 DOMINANCE'}
+        </div>
+      </div>
+
+      <div className="hud-side p2-side">
+        <div className={`deck-count ${p2Count > p1Count ? 'advantage' : ''}`}>
+          <span className="label">P2 FORCE:</span> {p2Count}
+        </div>
+      </div>
+    </div>
+  );
+};
