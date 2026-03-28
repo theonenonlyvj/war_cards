@@ -15,14 +15,15 @@ interface GameState {
   winner: number | null;
   status: 'waiting' | 'playing' | 'game-over';
   history: any[];
+  isSolo?: boolean;
 }
 
-export const useWarGame = (roomId: string) => {
+export const useWarGame = () => {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [playerIndex, setPlayerIndex] = useState<number | null>(null);
+  const [roomId, setRoomId] = useState<string | null>(null);
 
   useEffect(() => {
-    socket.emit('join-room', roomId);
     socket.on('state-update', (state) => setGameState(state));
     socket.on('player-index', (index) => setPlayerIndex(index));
     socket.on('game-ready', () => console.log('Game Ready!'));
@@ -32,8 +33,23 @@ export const useWarGame = (roomId: string) => {
       socket.off('player-index');
       socket.off('game-ready');
     };
-  }, [roomId]);
+  }, []);
 
-  const flip = () => socket.emit('flip-card', { roomId });
-  return { gameState, flip, playerIndex };
+  const flip = () => {
+    if (roomId) {
+      socket.emit('flip-card', { roomId });
+    }
+  };
+
+  const joinRoom = (rId: string) => {
+    setRoomId(rId);
+    socket.emit('join-room', rId);
+  };
+
+  const joinSolo = (rId: string) => {
+    setRoomId(rId);
+    socket.emit('join-solo', rId);
+  };
+
+  return { gameState, flip, playerIndex, joinRoom, joinSolo, roomId };
 };

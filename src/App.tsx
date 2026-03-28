@@ -6,9 +6,8 @@ import { useWarGame } from './hooks/useWarGame';
 import { FXLayer } from './components/FXLayer';
 
 const App = () => {
-  const [roomId, setRoomId] = useState<string | null>(null);
   const [inputRoomId, setInputRoomId] = useState('');
-  const { gameState, flip, playerIndex } = useWarGame(roomId || '');
+  const { gameState, flip, playerIndex, joinRoom, joinSolo, roomId } = useWarGame();
   const [showFX, setShowFX] = useState(false);
 
   useEffect(() => {
@@ -33,18 +32,30 @@ const App = () => {
               placeholder="SECTOR CODE"
               className="neon-input"
             />
-            <button 
-              onClick={() => setRoomId(inputRoomId)}
-              className="neon-button"
-              disabled={!inputRoomId.trim()}
-            >
-              JOIN SECTOR
-            </button>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button 
+                onClick={() => joinRoom(inputRoomId)}
+                className="neon-button"
+                disabled={!inputRoomId.trim()}
+                style={{ flex: 1 }}
+              >
+                JOIN SECTOR
+              </button>
+              <button 
+                onClick={() => joinSolo(`SOLO-${inputRoomId}`)}
+                className="neon-button solo-mode-btn"
+                disabled={!inputRoomId.trim()}
+                style={{ flex: 1 }}
+              >
+                I'M LONELY
+              </button>
+            </div>
           </div>
         </div>
       </div>
     );
   }
+
 
   if (!gameState) {
     return (
@@ -128,7 +139,7 @@ const App = () => {
                   )}
                 </div>
                 <p className={`slot-label ${playerIndex === 2 ? 'local-user' : ''}`}>
-                  {playerIndex === 2 ? 'COMMANDER YOU' : 'P2 ENEMY'} {gameState.p2Flipped ? '[READY]' : ''}
+                  {playerIndex === 2 ? 'COMMANDER YOU' : (gameState.isSolo ? 'VIRTUAL COMMANDER' : 'P2 ENEMY')} {gameState.p2Flipped ? '[READY]' : ''}
                 </p>
               </div>
             </div>

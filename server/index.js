@@ -25,7 +25,8 @@ function getPublicState(room) {
     isWar: room.isWar || false,
     winner: room.winner || null,
     status: room.status,
-    history: room.history || []
+    history: room.history || [],
+    isSolo: room.isSolo || false
   };
 }
 
@@ -62,8 +63,8 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('join-solo', () => {
-    const roomId = `SOLO-${socket.id.substring(0, 6)}`;
+  socket.on('join-solo', (providedRoomId) => {
+    const roomId = providedRoomId || `SOLO-${socket.id.substring(0, 6)}`;
     socket.join(roomId);
     const { deck1, deck2 } = distributeDecks();
     rooms.set(roomId, { 
