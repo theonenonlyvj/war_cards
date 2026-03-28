@@ -99,8 +99,12 @@ io.on('connection', (socket) => {
     broadcastState();
 
     const resolve = () => {
+      if (room.resolving) return; // Safeguard
+      room.resolving = true;
+
       if (room.deck1.length === 0 || room.deck2.length === 0) {
         room.status = 'game-over';
+        room.resolving = false;
         io.to(roomId).emit('state-update', getPublicState(room));
         return;
       }
@@ -128,6 +132,7 @@ io.on('connection', (socket) => {
 
       // Delay the result slightly for visual effect
       setTimeout(() => {
+        room.resolving = false;
         io.to(roomId).emit('state-update', getPublicState(room));
 
         if (room.deck1.length === 0 || room.deck2.length === 0) {
@@ -138,9 +143,11 @@ io.on('connection', (socket) => {
     };
 
     if (room.isSolo && room.flips.size === 1) {
+      room.resolving = true; // Mark as resolving to block further flips
       setTimeout(() => {
         room.flips.set('BOT-AI', true);
         broadcastState();
+        room.resolving = false; // Temporarily allow resolve
         resolve();
       }, 500);
     } else if (room.flips.size === 2) {
@@ -153,7 +160,7 @@ io.on('connection', (socket) => {
       const room = rooms.get(socket.roomId);
       room.players = room.players.filter(id => id !== socket.id);
       
-      if (room.players.length === 0) {
+      if (room.players.length === 0 || (room.isSolo && room.players.length === 1 && room.players[0] === 'BOT-AI')) {
         rooms.delete(socket.roomId);
       } else {
         room.status = 'waiting';
