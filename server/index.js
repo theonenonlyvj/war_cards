@@ -77,6 +77,8 @@ io.on('connection', (socket) => {
       room.deck2 = deck2;
       room.flips = new Map(); // Track which player has flipped
       room.status = 'playing';
+      room.pot = [];
+      room.history = [];
       io.to(roomId).emit('game-ready');
       io.to(roomId).emit('state-update', getPublicState(room));
     }
@@ -95,27 +97,29 @@ io.on('connection', (socket) => {
       deck2, 
       flips: new Map(), 
       status: 'playing',
-      isSolo: true 
+      isSolo: true,
+      pot: [],
+      history: []
     });
     
     socket.roomId = roomId;
     socket.playerIndex = 1;
     socket.emit('player-index', 1);
-    socket.emit('room-id', roomId); // Tell client the actual ID used
+    socket.emit('room-id', roomId); 
     io.to(roomId).emit('game-ready');
     io.to(roomId).emit('state-update', getPublicState(rooms.get(roomId)));
   });
 
   socket.on('flip-card', ({ roomId }) => {
     const room = rooms.get(roomId);
-    if (!room || (room.status !== 'playing' && room.status !== 'incident') || room.resolving) return;
+    if (!room || (room.status !== 'playing' && room.status !== 'incident' && room.status !== 'deployment') || room.resolving) return;
 
     if (room.flips.has(socket.id)) return; // Prevents double flip
 
     room.flips.set(socket.id, true);
 
-    // Clear previous cards if this is the start of a new round
-    if (room.flips.size === 1) {
+    // Reset card visuals at the start of a new flip cycle (unless in deployment)
+    if (room.flips.size === 1 && room.status !== 'incident' && room.status !== 'deployment') {
       room.p1Card = null;
       room.p2Card = null;
       room.winner = null;
@@ -143,46 +147,56 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Check if we are currently in a Tie situation (War pending)
       if (room.status === 'incident') {
-        const result = resolveRound(room.deck1, room.deck2, room.pot, room.history);
+        // Stage 2: Deployment (The Burn)
+        const r1 = room.deck1.splice(0, Math.min(room.deck1.length - 1, 3));
+        const r2 = room.deck2.splice(0, Math.min(room.deck2.length - 1, 3));
+        room.pot.push(...r1, ...r2);
+        room.history.push({ r1, r2, type: 'war-reinforcements' });
         
-        room.p1Card = room.deck1[0] || null; // The NEW face up card
-        room.p2Card = room.deck2[0] || null;
-        room.winner = result.winner;
-        room.isWar = result.pot.length > room.pot.length + 2;
-        room.history = result.history;
-        room.pot = result.pot;
-
-        if (result.winner !== 0) {
-          room.status = 'playing'; // Back to normal play for next round
-          if (result.winner === 1) room.deck1.push(...result.pot);
-          else if (result.winner === 2) room.deck2.push(...result.pot);
-          room.pot = [];
-        } else {
-          room.status = 'incident'; // Another tie!
-        }
-      } else {
-        // Normal round
+        room.p1Card = null; 
+        room.p2Card = null;
+        room.status = 'deployment';
+      } else if (room.status === 'deployment') {
+        // Stage 3: The Face-off
         const c1 = room.deck1.shift();
         const c2 = room.deck2.shift();
-        const currentPot = [c1, c2];
-        const currentHistory = [{ c1, c2, type: 'battle' }];
-
+        room.pot.push(c1, c2);
+        room.history.push({ c1, c2, type: 'battle' });
+        
         room.p1Card = c1;
         room.p2Card = c2;
-        room.pot = currentPot;
-        room.history = currentHistory;
 
         if (c1 === c2) {
-          room.status = 'incident'; // Trigger Emergency
+          room.status = 'incident';
           room.winner = null;
           room.isWar = true;
         } else {
           room.winner = c1 > c2 ? 1 : 2;
-          if (room.winner === 1) room.deck1.push(...currentPot);
-          else room.deck2.push(...currentPot);
+          if (room.winner === 1) room.deck1.push(...room.pot);
+          else room.deck2.push(...room.pot);
           room.status = 'playing';
+          room.pot = [];
+        }
+      } else {
+        // Stage 1: Standard Battle
+        const c1 = room.deck1.shift();
+        const c2 = room.deck2.shift();
+        room.pot = [c1, c2];
+        room.history = [{ c1, c2, type: 'battle' }];
+        room.p1Card = c1;
+        room.p2Card = c2;
+
+        if (c1 === c2) {
+          room.status = 'incident';
+          room.winner = null;
+          room.isWar = true;
+        } else {
+          room.winner = c1 > c2 ? 1 : 2;
+          if (room.winner === 1) room.deck1.push(...room.pot);
+          else room.deck2.push(...room.pot);
+          room.status = 'playing';
+          room.pot = [];
         }
       }
 
@@ -200,7 +214,7 @@ io.on('connection', (socket) => {
     };
 
     if (room.isSolo && room.flips.size === 1) {
-      room.resolving = true; // Block further flips until bot "thinks"
+      room.resolving = true; 
       setTimeout(() => {
         room.flips.set('BOT-AI', true);
         broadcastState();
