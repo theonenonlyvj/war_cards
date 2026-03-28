@@ -33,6 +33,11 @@ body {
   border: 1px solid rgba(0, 243, 255, 0.1);
 }
 
+.join-screen {
+  justify-content: center;
+  align-items: center;
+}
+
 .hud-container {
   display: flex;
   justify-content: space-between;
@@ -68,7 +73,7 @@ body {
   width: 100%;
   max-width: 800px;
   height: 100%;
-  max-height: 500px;
+  max-height: 600px;
   border: 1px solid rgba(0, 243, 255, 0.2);
   background: rgba(0, 0, 0, 0.5);
   display: flex;
@@ -84,9 +89,9 @@ body {
   right: 0;
   bottom: 0;
   background-image: 
-    linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
-  background-size: 50px 50px;
+    linear-gradient(rgba(0, 243, 253, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 243, 253, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
   pointer-events: none;
 }
 
@@ -97,24 +102,35 @@ body {
   justify-content: center;
   z-index: 1;
   width: 100%;
+  height: 100%;
+}
+
+.cards-container {
+  display: flex;
+  flex-direction: row;
+  gap: 30px;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
 }
 
 .card-slot {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 15px;
   flex: 1;
-  max-width: 150px;
+  max-width: 250px;
 }
 
 .holographic-card {
   width: 100%;
+  max-width: 200px;
   aspect-ratio: 2/3;
   border: 2px solid var(--neon-cyan);
-  border-radius: 8px;
+  border-radius: 12px;
   background: rgba(0, 243, 255, 0.1);
-  box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+  box-shadow: 0 0 30px rgba(0, 243, 255, 0.4);
   position: relative;
   display: flex;
   align-items: center;
@@ -123,16 +139,17 @@ body {
 }
 
 .card-value {
-  font-size: clamp(1.5rem, 5vw, 3rem);
-  text-shadow: 0 0 10px var(--neon-cyan);
+  font-size: clamp(2rem, 8vw, 5rem);
+  text-shadow: 0 0 15px var(--neon-cyan);
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
+  font-weight: 900;
 }
 
 .card-symbol {
-  font-size: 0.7em;
-  opacity: 0.8;
+  font-size: 0.8em;
+  opacity: 0.9;
 }
 
 .scanning-line {
@@ -140,22 +157,23 @@ body {
   top: 0;
   left: 0;
   width: 100%;
-  height: 2px;
+  height: 3px;
   background: var(--neon-cyan);
-  box-shadow: 0 0 10px var(--neon-cyan);
-  animation: scan 2s infinite linear;
-  opacity: 0.5;
+  box-shadow: 0 0 15px var(--neon-cyan);
+  animation: scan 2.5s infinite linear;
+  opacity: 0.6;
 }
 
 .slot-label {
-  font-size: 0.7rem;
-  opacity: 0.6;
+  font-size: 0.9rem;
+  opacity: 0.8;
   text-transform: uppercase;
   text-align: center;
+  letter-spacing: 1px;
 }
 
 .controls {
-  padding: 10px 0;
+  padding: 15px 0;
   display: flex;
   justify-content: center;
   gap: 10px;
@@ -165,35 +183,36 @@ body {
   background: transparent;
   border: 1px solid var(--neon-cyan);
   color: var(--neon-cyan);
-  padding: 10px;
+  padding: 15px;
   font-family: inherit;
-  font-size: 1rem;
+  font-size: 1.2rem;
   outline: none;
-  box-shadow: inset 0 0 5px var(--neon-cyan);
+  box-shadow: inset 0 0 8px var(--neon-cyan);
   width: 100%;
-  max-width: 200px;
+  max-width: 300px;
+  text-align: center;
 }
 
 .neon-button {
   background: transparent;
   border: 2px solid var(--neon-cyan);
   color: var(--neon-cyan);
-  padding: 12px 20px;
+  padding: 15px 25px;
   font-family: inherit;
-  font-size: 1rem;
+  font-size: 1.1rem;
   text-transform: uppercase;
   letter-spacing: 2px;
   cursor: pointer;
-  box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+  box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
   transition: all 0.3s ease;
   width: 100%;
-  max-width: 300px;
+  max-width: 400px;
 }
 
 .neon-button:hover:not(:disabled) {
   background: var(--neon-cyan);
   color: var(--bg-dark);
-  box-shadow: 0 0 20px rgba(0, 243, 255, 0.6);
+  box-shadow: 0 0 30px rgba(0, 243, 255, 0.6);
 }
 
 .neon-button:disabled {
@@ -202,25 +221,32 @@ body {
 }
 
 .terminal-overlay {
-  background: rgba(0, 20, 20, 0.8);
-  border: 1px solid rgba(0, 243, 255, 0.2);
-  padding: 10px 15px;
+  background: rgba(0, 20, 20, 0.9);
+  border: 1px solid rgba(0, 243, 255, 0.3);
+  padding: 15px 20px;
   color: var(--terminal-green);
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   width: 100%;
+  max-width: 600px;
   box-sizing: border-box;
-  margin-top: 5px;
-  overflow-y: auto;
+  margin: 10px auto;
+  position: relative;
+  box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
+}
+
+.join-screen .terminal-overlay {
+  text-align: center;
 }
 
 .status-log {
-  max-height: 20vh;
+  max-height: 25vh;
+  overflow-y: auto;
 }
 
 .history-monitor {
   border-left: 2px solid var(--neon-magenta);
-  margin: 5px 0;
-  padding-left: 10px;
+  margin: 8px 0;
+  padding-left: 15px;
 }
 
 .game-over-alert {
@@ -246,25 +272,39 @@ body {
 
 @media (max-width: 600px) {
   .hud-container {
-    padding: 8px 10px;
-    font-size: 0.7rem;
+    padding: 10px;
+    font-size: 0.8rem;
   }
   
   .status-monitor {
-    display: none; /* Hide status text on small mobile to save space */
+    display: none;
   }
 
-  .battle-zone-content {
+  .cards-container {
+    flex-direction: column;
     gap: 15px;
   }
 
   .card-slot {
-    max-width: 100px;
+    max-width: 160px;
+  }
+
+  .card-value {
+    font-size: 2.5rem;
+  }
+
+  .slot-label {
+    font-size: 0.7rem;
   }
 
   .neon-button {
+    font-size: 0.9rem;
+    padding: 12px;
+    letter-spacing: 1px;
+  }
+  
+  .terminal-overlay {
     font-size: 0.8rem;
     padding: 10px;
-    letter-spacing: 1px;
   }
 }
