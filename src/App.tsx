@@ -21,7 +21,7 @@ const App = () => {
 
   if (!roomId) {
     return (
-      <div className="command-center">
+      <div className="command-center join-screen">
         <div className="terminal-overlay">
           <p>&gt; VWAR COMMAND CENTER INITIALIZED.</p>
           <p>&gt; ENTER SECTOR CODE TO JOIN BATTLE:</p>
