@@ -1,7 +1,7 @@
 const CARD_MIN = 2;
 const CARD_MAX = 14;
-const SUITS_COUNT = 4;
-const TOTAL_CARDS = (CARD_MAX - CARD_MIN + 1) * SUITS_COUNT;
+const SUITS = ['&spades;', '&hearts;', '&diams;', '&clubs;'];
+const TOTAL_CARDS = (CARD_MAX - CARD_MIN + 1) * SUITS.length;
 
 function shuffle(array) {
   for (let i = array.length - 1; i > 0; i--) {
@@ -13,10 +13,10 @@ function shuffle(array) {
 
 function distributeDecks() {
   const cards = [];
-  // Deck consists of cards 2 through 14 (Ace), 4 of each.
+  // Deck consists of cards 2 through 14 (Ace), 1 of each suit per rank.
   for (let i = CARD_MIN; i <= CARD_MAX; i++) {
-    for (let j = 0; j < SUITS_COUNT; j++) {
-      cards.push(i);
+    for (const suit of SUITS) {
+      cards.push({ value: i, suit, id: `${i}-${suit}-${Math.random()}` });
     }
   }
   
@@ -29,24 +29,18 @@ function distributeDecks() {
   };
 }
 
+// resolveRound is deprecated by the state machine in index.js, 
+// but kept for backward compatibility if needed by simple tests.
 function resolveRound(deck1, deck2, pot = [], history = []) {
   const c1 = deck1.shift();
   const c2 = deck2.shift();
-  
-  // Standard War rule: Winner takes both cards in a consistent order (P1 then P2)
-  // to ensure fixed deck order and no unintended 'reshuffling' feel.
   const currentPot = [...pot, c1, c2];
   const roundHistory = [...history, { c1, c2, type: 'battle' }];
 
-  if (c1 > c2) return { winner: 1, pot: currentPot, history: roundHistory };
-  if (c2 > c1) return { winner: 2, pot: currentPot, history: roundHistory };
+  if (c1.value > c2.value) return { winner: 1, pot: currentPot, history: roundHistory };
+  if (c2.value > c1.value) return { winner: 2, pot: currentPot, history: roundHistory };
 
-  // War Logic (Tie)
-  // House Rule: The Last Stand - If not enough cards, use the last one as the battle card
   if (deck1.length === 0 || deck2.length === 0) {
-     if (deck1.length === 0 && deck2.length === 0) {
-       return { winner: 0, pot: currentPot, history: roundHistory }; 
-     }
      return { winner: deck1.length === 0 ? 2 : 1, pot: currentPot, history: roundHistory };
   }
 
@@ -67,6 +61,6 @@ module.exports = {
   resolveRound,
   CARD_MIN,
   CARD_MAX,
-  SUITS_COUNT,
+  SUITS,
   TOTAL_CARDS
 };

@@ -4,24 +4,29 @@ import { io } from 'socket.io-client';
 const SOCKET_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 const socket = io(SOCKET_URL);
 
+interface CardData {
+  value: number;
+  suit: string;
+}
+
 interface HistoryStep {
   type: 'battle' | 'war-reinforcements';
-  c1?: number;
-  c2?: number;
-  r1?: number[];
-  r2?: number[];
+  c1?: CardData;
+  c2?: CardData;
+  r1?: CardData[];
+  r2?: CardData[];
 }
 
 interface GameState {
   p1Count: number;
   p2Count: number;
-  p1Card: number | null;
-  p2Card: number | null;
+  p1Card: CardData | null;
+  p2Card: CardData | null;
   p1Flipped: boolean;
   p2Flipped: boolean;
   isWar: boolean;
   winner: number | null;
-  status: 'waiting' | 'playing' | 'game-over';
+  status: 'waiting' | 'playing' | 'game-over' | 'incident' | 'deployment';
   history: HistoryStep[];
   isSolo?: boolean;
 }
@@ -61,7 +66,7 @@ export const useWarGame = () => {
     const finalId = rId || `SOLO-TEMP-${Math.random().toString(36).substring(7)}`;
     console.log('Joining Solo:', finalId);
     setRoomId(finalId);
-    socket.emit('join-solo', rId); // Pass original rId (can be undefined) to server
+    socket.emit('join-solo', rId); 
   };
 
   return { gameState, flip, playerIndex, joinRoom, joinSolo, roomId };
