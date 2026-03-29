@@ -106,7 +106,7 @@ const App = () => {
                     )
                   ))}
                   {gameState.p1Card ? (
-                    <Card value={mapValue(gameState.p1Card)} suit="&spades;" isFaceUp={true} />
+                    <Card value={mapValue(gameState.p1Card.value)} suit={gameState.p1Card.suit} isFaceUp={true} />
                   ) : (
                     <div className="holographic-card" style={{ opacity: gameState.p1Flipped ? 0.6 : 0.2 }}>
                       {gameState.p1Flipped && <div className="scanning-line" />}
@@ -133,7 +133,7 @@ const App = () => {
                     )
                   ))}
                   {gameState.p2Card ? (
-                    <Card value={mapValue(gameState.p2Card)} suit="&hearts;" isFaceUp={true} />
+                    <Card value={mapValue(gameState.p2Card.value)} suit={gameState.p2Card.suit} isFaceUp={true} />
                   ) : (
                     <div className="holographic-card" style={{ opacity: gameState.p2Flipped ? 0.6 : 0.2 }}>
                       {gameState.p2Flipped && <div className="scanning-line" />}
@@ -177,7 +177,7 @@ const App = () => {
             )}
             {gameState.history.map((step: any, idx: number) => (
               <p key={idx} style={{ paddingLeft: '20px', fontSize: '0.8rem' }}>
-                {step.type === 'battle' ? `> BATTLE: P1(${mapValue(step.c1)}) vs P2(${mapValue(step.c2)})` : `> REINFORCEMENTS: ${step.r1.length} cards deployed.`}
+                {step.type === 'battle' ? `> BATTLE: P1(${mapValue(step.c1.value)}) vs P2(${mapValue(step.c2.value)})` : `> REINFORCEMENTS: ${step.r1.length} cards deployed.`}
               </p>
             ))}
           </div>

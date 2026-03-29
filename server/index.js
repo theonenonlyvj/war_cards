@@ -106,7 +106,6 @@ io.on('connection', (socket) => {
 
     room.flips.set(socket.id, true);
 
-    // Initial visual reset for a new round
     if (room.flips.size === 1 && room.status === 'playing') {
       room.p1Card = null;
       room.p2Card = null;
@@ -134,7 +133,6 @@ io.on('connection', (socket) => {
       }
 
       if (room.status === 'incident') {
-        // Stage 2: The Burn
         const r1 = room.deck1.splice(0, Math.min(room.deck1.length - 1, 3));
         const r2 = room.deck2.splice(0, Math.min(room.deck2.length - 1, 3));
         room.pot.push(...r1, ...r2);
@@ -142,21 +140,20 @@ io.on('connection', (socket) => {
         room.p1Card = null; 
         room.p2Card = null;
         room.status = 'deployment';
-        room.isWar = false; // Stop siren and emergency visuals
+        room.isWar = false; 
       } else if (room.status === 'deployment') {
-        // Stage 3: The Reveal
         const c1 = room.deck1.shift();
         const c2 = room.deck2.shift();
         room.pot.push(c1, c2);
         room.p1Card = c1; 
         room.p2Card = c2;
         room.history.push({ c1, c2, type: 'battle' });
-        if (c1 === c2) {
+        if (c1.value === c2.value) {
           room.status = 'incident'; 
           room.isWar = true; 
           room.winner = null;
         } else {
-          room.winner = c1 > c2 ? 1 : 2;
+          room.winner = c1.value > c2.value ? 1 : 2;
           const winnerDeck = room.winner === 1 ? room.deck1 : room.deck2;
           winnerDeck.push(...room.pot);
           room.pot = []; 
@@ -164,19 +161,18 @@ io.on('connection', (socket) => {
           room.isWar = false;
         }
       } else {
-        // Stage 1: Normal Battle
         const c1 = room.deck1.shift();
         const c2 = room.deck2.shift();
         room.pot = [c1, c2];
         room.p1Card = c1; 
         room.p2Card = c2;
         room.history = [{ c1, c2, type: 'battle' }];
-        if (c1 === c2) {
+        if (c1.value === c2.value) {
           room.status = 'incident'; 
           room.isWar = true; 
           room.winner = null;
         } else {
-          room.winner = c1 > c2 ? 1 : 2;
+          room.winner = c1.value > c2.value ? 1 : 2;
           const winnerDeck = room.winner === 1 ? room.deck1 : room.deck2;
           winnerDeck.push(...room.pot);
           room.pot = []; 
