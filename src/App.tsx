@@ -8,7 +8,7 @@ import { audioManager } from './utils/AudioManager';
 
 const App = () => {
   const [inputRoomId, setInputRoomId] = useState('');
-  const { gameState, flip, playerIndex, joinRoom, joinSolo, roomId } = useWarGame();
+  const { gameState, flip, playerIndex, joinRoom, joinSolo, roomId, isLocalMode, localState } = useWarGame();
   const [showFX, setShowFX] = useState(false);
 
   useEffect(() => {
@@ -44,11 +44,21 @@ const App = () => {
               >
                 JOIN SECTOR
               </button>
+              
+              {localState && (
+                <button 
+                  onClick={() => joinSolo(false)}
+                  className="neon-button resume-btn"
+                >
+                  RESUME LOCAL BATTLE
+                </button>
+              )}
+
               <button 
-                onClick={() => joinSolo(inputRoomId ? `SOLO-${inputRoomId}` : undefined)}
+                onClick={() => joinSolo(true)}
                 className="neon-button solo-btn"
               >
-                I'M LONELY
+                NEW LOCAL BATTLE
               </button>
             </div>
           </div>
@@ -84,6 +94,11 @@ const App = () => {
 
   return (
     <div className={`command-center ${gameState.isWar ? 'emergency-state' : ''}`}>
+      {isLocalMode && (
+        <div className="local-override-tag">
+          <span className="blink">●</span> LOCAL OVERRIDE ACTIVE
+        </div>
+      )}
       <FXLayer trigger={showFX} />
       <HUD p1Count={gameState.p1Count} p2Count={gameState.p2Count} isWar={gameState.isWar} />
       
