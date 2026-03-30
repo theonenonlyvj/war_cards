@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { io } from 'socket.io-client';
 import * as VWarEngine from '../utils/VWarEngine';
 
@@ -27,8 +27,8 @@ interface GameState {
   p2Flipped: boolean;
   isWar: boolean;
   winner: number | null;
-  status: 'waiting' | 'playing' | 'game-over' | 'incident' | 'deployment';
-  history: HistoryStep[];
+  status: VWarEngine.GameStatus;
+  history: VWarEngine.HistoryStep[];
   isSolo?: boolean;
 }
 
@@ -37,12 +37,11 @@ export const useWarGame = () => {
   const [playerIndex, setPlayerIndex] = useState<number | null>(null);
   const [roomId, setRoomId] = useState<string | null>(null);
 
-  // Task 3: Local Mode Logic
   const [isLocalMode, setIsLocalMode] = useState(false);
   const [localState, setLocalState] = useState<VWarEngine.GameState | null>(null);
+  const isResolving = useRef(false);
 
-  // Sync helper to bridge VWarEngine state to UI GameState
-  const updateLocalUI = useCallback((engineState: VWarEngine.GameState, p1Flipped = false, p2Flipped = false) => {
+  const updateLocalUI = useCallback((engineState: VWarEngine.GameState, p1Flipped = false, p2Flipped = false, persist = false) => {
     const uiState: GameState = {
       p1Count: engineState.deck1.length,
       p2Count: engineState.deck2.length,
@@ -52,15 +51,16 @@ export const useWarGame = () => {
       p2Flipped,
       isWar: engineState.isWar,
       winner: engineState.winner,
-      status: engineState.status as any,
-      history: engineState.history as any,
+      status: engineState.status,
+      history: engineState.history,
       isSolo: true
     };
     setGameState(uiState);
-    localStorage.setItem('vwar_local_session', JSON.stringify(engineState));
+    if (persist) {
+      localStorage.setItem('vwar_local_session', JSON.stringify(engineState));
+    }
   }, []);
 
-  // Step 2: Persistence logic - restore local session on load
   useEffect(() => {
     const saved = localStorage.getItem('vwar_local_session');
     if (saved) {
@@ -97,7 +97,7 @@ export const useWarGame = () => {
 
     if (savedState) {
       setLocalState(savedState);
-      updateLocalUI(savedState);
+      updateLocalUI(savedState, false, false, true);
     } else {
       const { deck1, deck2 } = VWarEngine.distributeDecks();
       const newState: VWarEngine.GameState = {
@@ -112,30 +112,37 @@ export const useWarGame = () => {
         history: []
       };
       setLocalState(newState);
-      updateLocalUI(newState);
+      updateLocalUI(newState, false, false, true);
     }
   };
 
   const flipLocal = async () => {
-    if (!localState) return;
+    if (!localState || isResolving.current) return;
+    isResolving.current = true;
 
-    // 1. Set local flip flags (p1Flipped, p2Flipped)
-    // We simulate player flip first
-    updateLocalUI(localState, true, false);
+    // Reset visuals for a new round if we are in 'playing' state
+    let baseState = localState;
+    if (localState.status === 'playing') {
+      baseState = { ...localState, p1Card: null, p2Card: null, winner: null, isWar: false, history: [] };
+    }
 
-    // 2. setTimeout(500) for AI response
+    // 1. Simulate player flip
+    updateLocalUI(baseState, true, false);
+
+    // 2. Simulate AI response
     await new Promise(r => setTimeout(r, 500));
-    updateLocalUI(localState, true, true);
+    updateLocalUI(baseState, true, true);
 
-    // Wait another 500ms before resolution for visual pacing
+    // Visual pacing
     await new Promise(r => setTimeout(r, 500));
 
-    // 3. Call VWarEngine.resolveStage
-    const nextState = VWarEngine.resolveStage(localState);
+    // 3. Resolve stage
+    const nextState = VWarEngine.resolveStage(baseState);
     
-    // 4. Update localState and localStorage
+    // 4. Final update
     setLocalState(nextState);
-    updateLocalUI(nextState, false, false);
+    updateLocalUI(nextState, false, false, true);
+    isResolving.current = false;
   };
 
   const flip = () => {
@@ -147,20 +154,23 @@ export const useWarGame = () => {
   };
 
   const joinRoom = (rId: string) => {
-    console.log('Joining Room:', rId);
     setIsLocalMode(false);
     setRoomId(rId);
     socket.emit('join-room', rId);
   };
 
-  const joinSolo = (rId?: string) => {
-    // Resume if saved state exists, otherwise start fresh
-    if (localState) {
+  const joinSolo = (forceNew = false) => {
+    if (localState && !forceNew) {
       startLocalGame(localState);
     } else {
       startLocalGame();
     }
   };
 
-  return { gameState, flip, playerIndex, joinRoom, joinSolo, roomId };
+  const deleteLocalSession = () => {
+    localStorage.removeItem('vwar_local_session');
+    setLocalState(null);
+  };
+
+  return { gameState, flip, playerIndex, joinRoom, joinSolo, roomId, isLocalMode, localState, deleteLocalSession };
 };
