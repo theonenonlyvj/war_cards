@@ -133,8 +133,8 @@ io.on('connection', (socket) => {
       }
 
       if (room.status === 'incident') {
-        const r1 = room.deck1.splice(0, Math.min(room.deck1.length - 1, 3));
-        const r2 = room.deck2.splice(0, Math.min(room.deck2.length - 1, 3));
+        const r1 = room.deck1.splice(0, Math.max(0, Math.min(room.deck1.length - 1, 3)));
+        const r2 = room.deck2.splice(0, Math.max(0, Math.min(room.deck2.length - 1, 3)));
         room.pot.push(...r1, ...r2);
         room.history.push({ r1, r2, type: 'war-reinforcements' });
         room.p1Card = null; 
@@ -177,6 +177,7 @@ io.on('connection', (socket) => {
           winnerDeck.push(...room.pot);
           room.pot = []; 
           room.status = 'playing';
+          room.isWar = false;
         }
       }
 

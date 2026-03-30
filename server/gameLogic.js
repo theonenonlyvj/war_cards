@@ -16,7 +16,8 @@ function distributeDecks() {
   // Deck consists of cards 2 through 14 (Ace), 1 of each suit per rank.
   for (let i = CARD_MIN; i <= CARD_MAX; i++) {
     for (const suit of SUITS) {
-      cards.push({ value: i, suit, id: `${i}-${suit}-${Math.random()}` });
+      // Deterministic ID for state reconciliation
+      cards.push({ value: i, suit, id: `${i}-${suit}` });
     }
   }
   
@@ -29,8 +30,7 @@ function distributeDecks() {
   };
 }
 
-// resolveRound is deprecated by the state machine in index.js, 
-// but kept for backward compatibility if needed by simple tests.
+// deprecated by the state machine in index.js, kept for old tests
 function resolveRound(deck1, deck2, pot = [], history = []) {
   const c1 = deck1.shift();
   const c2 = deck2.shift();
@@ -44,8 +44,8 @@ function resolveRound(deck1, deck2, pot = [], history = []) {
      return { winner: deck1.length === 0 ? 2 : 1, pot: currentPot, history: roundHistory };
   }
 
-  const reinforcements1 = deck1.splice(0, Math.min(deck1.length - 1, 3));
-  const reinforcements2 = deck2.splice(0, Math.min(deck2.length - 1, 3));
+  const reinforcements1 = deck1.splice(0, Math.max(0, Math.min(deck1.length - 1, 3)));
+  const reinforcements2 = deck2.splice(0, Math.max(0, Math.min(deck2.length - 1, 3)));
   
   const warHistory = [...roundHistory, { 
     r1: reinforcements1, 
