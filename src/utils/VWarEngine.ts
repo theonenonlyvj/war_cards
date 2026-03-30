@@ -4,7 +4,15 @@ export interface Card {
   id: string;
 }
 
-export type GameStatus = 'playing' | 'incident' | 'deployment' | 'game-over' | 'waiting';
+export type GameStatus = 'playing' | 'incident' | 'deployment' | 'game-over';
+
+export interface HistoryStep {
+  type: 'battle' | 'war-reinforcements';
+  c1?: Card;
+  c2?: Card;
+  r1?: Card[];
+  r2?: Card[];
+}
 
 export interface GameState {
   deck1: Card[];
@@ -15,7 +23,7 @@ export interface GameState {
   status: GameStatus;
   winner: 1 | 2 | null;
   isWar: boolean;
-  history: any[];
+  history: HistoryStep[];
 }
 
 export const CARD_MIN = 2;
@@ -36,7 +44,8 @@ export function distributeDecks(): { deck1: Card[], deck2: Card[] } {
   // Deck consists of cards 2 through 14 (Ace), 1 of each suit per rank.
   for (let i = CARD_MIN; i <= CARD_MAX; i++) {
     for (const suit of SUITS) {
-      cards.push({ value: i, suit, id: `${i}-${suit}-${Math.random()}` });
+      // Deterministic ID for state reconciliation
+      cards.push({ value: i, suit, id: `${i}-${suit}` });
     }
   }
   
@@ -65,16 +74,18 @@ export function resolveStage(state: GameState): GameState {
   }
 
   if (newState.status === 'incident') {
-    // Burns up to 3 cards from each deck
-    const r1 = newState.deck1.splice(0, Math.min(newState.deck1.length - 1, 3));
-    const r2 = newState.deck2.splice(0, Math.min(newState.deck2.length - 1, 3));
+    // Stage 2: Deployment (The Burn)
+    // Safety check: Use Math.max to prevent negative splice count
+    const r1 = newState.deck1.splice(0, Math.max(0, Math.min(newState.deck1.length - 1, 3)));
+    const r2 = newState.deck2.splice(0, Math.max(0, Math.min(newState.deck2.length - 1, 3)));
     newState.pot.push(...r1, ...r2);
     newState.history.push({ r1, r2, type: 'war-reinforcements' });
     newState.p1Card = null;
     newState.p2Card = null;
     newState.status = 'deployment';
-    newState.isWar = false;
+    newState.isWar = false; // Stop siren and visuals during deployment
   } else if (newState.status === 'deployment') {
+    // Stage 3: The Reveal
     const c1 = newState.deck1.shift()!;
     const c2 = newState.deck2.shift()!;
     newState.pot.push(c1, c2);
@@ -95,7 +106,7 @@ export function resolveStage(state: GameState): GameState {
       newState.isWar = false;
     }
   } else {
-    // Standard 'playing' status
+    // Stage 1: Standard Battle (playing)
     const c1 = newState.deck1.shift()!;
     const c2 = newState.deck2.shift()!;
     newState.pot = [c1, c2];
@@ -113,6 +124,7 @@ export function resolveStage(state: GameState): GameState {
       winnerDeck.push(...newState.pot);
       newState.pot = [];
       newState.status = 'playing';
+      newState.isWar = false; // Explicitly reset
     }
   }
 
