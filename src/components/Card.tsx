@@ -5,13 +5,15 @@ interface CardProps {
   value: number | string;
   suit: string;
   isFaceUp: boolean;
+  resultState?: 'winner' | 'loser' | null;
 }
 
-export const Card = ({ value, suit, isFaceUp }: CardProps) => (
+export const Card = ({ value, suit, isFaceUp, resultState = null }: CardProps) => (
   <motion.div 
     layoutId={`${value}-${suit}`}
-    className="holographic-card"
+    className={`holographic-card ${resultState ? `card-${resultState}` : ''}`}
     animate={{ rotateY: isFaceUp ? 0 : 180 }}
+    aria-label={isFaceUp ? `${value} ${suit}` : 'Face down card'}
   >
     <div className="scanning-line" />
     {isFaceUp && (

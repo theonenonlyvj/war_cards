@@ -5,6 +5,8 @@ export interface Card {
 }
 
 export type GameStatus = 'playing' | 'incident' | 'deployment' | 'game-over';
+export type MatchMode = 'blitz' | 'classic';
+export type GameOverReason = 'target-cards' | 'all-cards';
 
 export interface HistoryStep {
   type: 'battle' | 'war-reinforcements';
@@ -24,12 +26,26 @@ export interface GameState {
   winner: 1 | 2 | null;
   isWar: boolean;
   history: HistoryStep[];
+  matchMode?: MatchMode;
+  targetCards?: number | null;
+  gameOverReason?: GameOverReason;
+}
+
+export interface TacticalIntel {
+  modeLabel: 'BLITZ' | 'CLASSIC';
+  targetCards: number | null;
+  potSize: number;
+  possibleSwing: number;
+  incidentChain: number;
+  isLastStand: boolean;
 }
 
 export const CARD_MIN = 2;
 export const CARD_MAX = 14;
 export const SUITS = ['&spades;', '&hearts;', '&diams;', '&clubs;'];
 export const TOTAL_CARDS = (CARD_MAX - CARD_MIN + 1) * SUITS.length;
+export const DEFAULT_MATCH_MODE: MatchMode = 'blitz';
+export const BLITZ_TARGET_CARDS = 35;
 
 function shuffle<T>(array: T[]): T[] {
   for (let i = array.length - 1; i > 0; i--) {
@@ -58,20 +74,104 @@ export function distributeDecks(): { deck1: Card[], deck2: Card[] } {
   };
 }
 
+function targetCardsForMode(matchMode: MatchMode): number | null {
+  return matchMode === 'blitz' ? BLITZ_TARGET_CARDS : null;
+}
+
+function normalizeMatchMode(state: GameState): MatchMode {
+  if (state.matchMode === 'blitz') return 'blitz';
+  return 'classic';
+}
+
+function normalizeTargetCards(state: GameState, matchMode: MatchMode): number | null {
+  if (matchMode === 'classic') return null;
+  return typeof state.targetCards === 'number' ? state.targetCards : BLITZ_TARGET_CARDS;
+}
+
+function battleSpoils(winner: 1 | 2, pot: Card[], c1: Card, c2: Card): Card[] {
+  const priorPot = pot.slice(0, -2);
+  const finalPair = winner === 1 ? [c1, c2] : [c2, c1];
+
+  return [...priorPot, ...finalPair];
+}
+
+function gameOverWinner(state: GameState): { winner: 1 | 2; reason: GameOverReason } | null {
+  if (state.deck1.length === 0) return { winner: 2, reason: 'all-cards' };
+  if (state.deck2.length === 0) return { winner: 1, reason: 'all-cards' };
+
+  const matchMode = normalizeMatchMode(state);
+  const targetCards = normalizeTargetCards(state, matchMode);
+
+  if (targetCards && state.deck1.length >= targetCards) return { winner: 1, reason: 'target-cards' };
+  if (targetCards && state.deck2.length >= targetCards) return { winner: 2, reason: 'target-cards' };
+
+  return null;
+}
+
+function applyGameOver(state: GameState): GameState {
+  const result = gameOverWinner(state);
+  if (!result) return state;
+
+  return {
+    ...state,
+    status: 'game-over',
+    winner: result.winner,
+    isWar: false,
+    gameOverReason: result.reason
+  };
+}
+
+export function createInitialState(matchMode: MatchMode = DEFAULT_MATCH_MODE): GameState {
+  const { deck1, deck2 } = distributeDecks();
+
+  return {
+    deck1,
+    deck2,
+    p1Card: null,
+    p2Card: null,
+    pot: [],
+    status: 'playing',
+    winner: null,
+    isWar: false,
+    history: [],
+    matchMode,
+    targetCards: targetCardsForMode(matchMode)
+  };
+}
+
+export function getTacticalIntel(state: GameState): TacticalIntel {
+  const matchMode = normalizeMatchMode(state);
+  const targetCards = normalizeTargetCards(state, matchMode);
+  const incidentChain = state.history.filter(step => step.type === 'war-reinforcements').length;
+  const pendingBattleCards = ['playing', 'incident', 'deployment'].includes(state.status) ? 2 : 0;
+
+  return {
+    modeLabel: matchMode === 'blitz' ? 'BLITZ' : 'CLASSIC',
+    targetCards,
+    potSize: state.pot.length,
+    possibleSwing: state.pot.length + pendingBattleCards,
+    incidentChain,
+    isLastStand: ['incident', 'deployment'].includes(state.status) && (
+      state.deck1.length < 4 || state.deck2.length < 4
+    )
+  };
+}
+
 export function resolveStage(state: GameState): GameState {
   // Create a deep enough copy to avoid mutating the original state arrays
+  const matchMode = normalizeMatchMode(state);
   const newState: GameState = { 
     ...state, 
     deck1: [...state.deck1],
     deck2: [...state.deck2],
     pot: [...state.pot],
-    history: [...state.history] 
+    history: [...state.history],
+    matchMode,
+    targetCards: normalizeTargetCards(state, matchMode)
   };
 
-  if (newState.deck1.length === 0 || newState.deck2.length === 0) {
-    newState.status = 'game-over';
-    return newState;
-  }
+  const initialGameOver = applyGameOver(newState);
+  if (initialGameOver.status === 'game-over') return initialGameOver;
 
   if (newState.status === 'incident') {
     // Stage 2: Deployment (The Burn)
@@ -100,7 +200,7 @@ export function resolveStage(state: GameState): GameState {
     } else {
       newState.winner = c1.value > c2.value ? 1 : 2;
       const winnerDeck = newState.winner === 1 ? newState.deck1 : newState.deck2;
-      winnerDeck.push(...newState.pot);
+      winnerDeck.push(...battleSpoils(newState.winner, newState.pot, c1, c2));
       newState.pot = [];
       newState.status = 'playing';
       newState.isWar = false;
@@ -121,12 +221,12 @@ export function resolveStage(state: GameState): GameState {
     } else {
       newState.winner = c1.value > c2.value ? 1 : 2;
       const winnerDeck = newState.winner === 1 ? newState.deck1 : newState.deck2;
-      winnerDeck.push(...newState.pot);
+      winnerDeck.push(...battleSpoils(newState.winner, newState.pot, c1, c2));
       newState.pot = [];
       newState.status = 'playing';
       newState.isWar = false; // Explicitly reset
     }
   }
 
-  return newState;
+  return applyGameOver(newState);
 }
