@@ -8,6 +8,7 @@ const socket = io(SOCKET_URL);
 interface CardData {
   value: number;
   suit: string;
+  id?: string;
 }
 
 interface HistoryStep {
@@ -30,6 +31,10 @@ interface GameState {
   status: VWarEngine.GameStatus;
   history: VWarEngine.HistoryStep[];
   isSolo?: boolean;
+  matchMode?: VWarEngine.MatchMode;
+  targetCards?: number | null;
+  gameOverReason?: VWarEngine.GameOverReason;
+  tacticalIntel?: VWarEngine.TacticalIntel;
 }
 
 export const useWarGame = () => {
@@ -53,7 +58,11 @@ export const useWarGame = () => {
       winner: engineState.winner,
       status: engineState.status,
       history: engineState.history,
-      isSolo: true
+      isSolo: true,
+      matchMode: engineState.matchMode,
+      targetCards: engineState.targetCards,
+      gameOverReason: engineState.gameOverReason,
+      tacticalIntel: VWarEngine.getTacticalIntel(engineState)
     };
     setGameState(uiState);
     if (persist) {
@@ -90,7 +99,7 @@ export const useWarGame = () => {
     };
   }, [isLocalMode]);
 
-  const startLocalGame = (savedState?: VWarEngine.GameState) => {
+  const startLocalGame = (savedState?: VWarEngine.GameState, matchMode: VWarEngine.MatchMode = VWarEngine.DEFAULT_MATCH_MODE) => {
     setIsLocalMode(true);
     setPlayerIndex(1);
     setRoomId('LOCAL');
@@ -99,18 +108,7 @@ export const useWarGame = () => {
       setLocalState(savedState);
       updateLocalUI(savedState, false, false, true);
     } else {
-      const { deck1, deck2 } = VWarEngine.distributeDecks();
-      const newState: VWarEngine.GameState = {
-        deck1,
-        deck2,
-        p1Card: null,
-        p2Card: null,
-        pot: [],
-        status: 'playing',
-        winner: null,
-        isWar: false,
-        history: []
-      };
+      const newState = VWarEngine.createInitialState(matchMode);
       setLocalState(newState);
       updateLocalUI(newState, false, false, true);
     }
@@ -159,11 +157,11 @@ export const useWarGame = () => {
     socket.emit('join-room', rId);
   };
 
-  const joinSolo = (forceNew = false) => {
+  const joinSolo = (forceNew = false, matchMode: VWarEngine.MatchMode = VWarEngine.DEFAULT_MATCH_MODE) => {
     if (localState && !forceNew) {
       startLocalGame(localState);
     } else {
-      startLocalGame();
+      startLocalGame(undefined, matchMode);
     }
   };
 

@@ -27,24 +27,9 @@ const App = () => {
       <div className="command-center join-screen">
         <div className="terminal-overlay">
           <p>&gt; VWAR COMMAND CENTER INITIALIZED.</p>
-          <p>&gt; ENTER SECTOR CODE TO JOIN BATTLE:</p>
+          <p>&gt; BLITZ OPERATION RECOMMENDED: FIRST COMMANDER TO 35 CARDS WINS.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '20px' }}>
-            <input 
-              type="text" 
-              value={inputRoomId} 
-              onChange={(e) => setInputRoomId(e.target.value)}
-              placeholder="SECTOR CODE"
-              className="neon-input"
-            />
             <div className="join-actions">
-              <button 
-                onClick={() => joinRoom(inputRoomId)}
-                className="neon-button"
-                disabled={!inputRoomId.trim()}
-              >
-                JOIN SECTOR
-              </button>
-              
               {localState && (
                 <button 
                   onClick={() => joinSolo(false)}
@@ -55,10 +40,35 @@ const App = () => {
               )}
 
               <button 
-                onClick={() => joinSolo(true)}
+                onClick={() => joinSolo(true, 'blitz')}
                 className="neon-button solo-btn"
               >
-                NEW LOCAL BATTLE
+                NEW BLITZ BATTLE
+              </button>
+
+              <button
+                onClick={() => joinSolo(true, 'classic')}
+                className="neon-button"
+              >
+                CLASSIC ATTRITION
+              </button>
+            </div>
+            <div className="sector-join">
+              <p>&gt; MULTIPLAYER SECTOR LINK:</p>
+              <input
+                type="text"
+                value={inputRoomId}
+                onChange={(e) => setInputRoomId(e.target.value)}
+                placeholder="SECTOR CODE"
+                className="neon-input"
+                aria-label="Sector code"
+              />
+              <button
+                onClick={() => joinRoom(inputRoomId)}
+                className="neon-button sector-btn"
+                disabled={!inputRoomId.trim()}
+              >
+                JOIN SECTOR
               </button>
             </div>
           </div>
@@ -91,16 +101,26 @@ const App = () => {
 
   const isLocalReady = playerIndex === 1 ? gameState.p1Flipped : gameState.p2Flipped;
   const isEngagementActive = ['playing', 'game-over', 'incident', 'deployment'].includes(gameState.status);
+  const tacticalIntel = gameState.tacticalIntel;
+  const cardResult = (slot: 1 | 2): 'winner' | 'loser' | null => {
+    if (!gameState.winner || gameState.isWar || !gameState.p1Card || !gameState.p2Card) return null;
+    return gameState.winner === slot ? 'winner' : 'loser';
+  };
 
   return (
     <div className={`command-center ${gameState.isWar ? 'emergency-state' : ''}`}>
+      <FXLayer trigger={showFX} />
+      <HUD
+        p1Count={gameState.p1Count}
+        p2Count={gameState.p2Count}
+        isWar={gameState.isWar}
+        tacticalIntel={tacticalIntel}
+      />
       {isLocalMode && (
         <div className="local-override-tag">
           <span className="blink">●</span> LOCAL OVERRIDE ACTIVE
         </div>
       )}
-      <FXLayer trigger={showFX} />
-      <HUD p1Count={gameState.p1Count} p2Count={gameState.p2Count} isWar={gameState.isWar} />
       
       <main className="main-display">
         <BattleZone>
@@ -121,7 +141,12 @@ const App = () => {
                     )
                   ))}
                   {gameState.p1Card ? (
-                    <Card value={mapValue(gameState.p1Card.value)} suit={gameState.p1Card.suit} isFaceUp={true} />
+                    <Card
+                      value={mapValue(gameState.p1Card.value)}
+                      suit={gameState.p1Card.suit}
+                      isFaceUp={true}
+                      resultState={cardResult(1)}
+                    />
                   ) : (
                     <div className="holographic-card" style={{ opacity: gameState.p1Flipped ? 0.6 : 0.2 }}>
                       {gameState.p1Flipped && <div className="scanning-line" />}
@@ -148,7 +173,12 @@ const App = () => {
                     )
                   ))}
                   {gameState.p2Card ? (
-                    <Card value={mapValue(gameState.p2Card.value)} suit={gameState.p2Card.suit} isFaceUp={true} />
+                    <Card
+                      value={mapValue(gameState.p2Card.value)}
+                      suit={gameState.p2Card.suit}
+                      isFaceUp={true}
+                      resultState={cardResult(2)}
+                    />
                   ) : (
                     <div className="holographic-card" style={{ opacity: gameState.p2Flipped ? 0.6 : 0.2 }}>
                       {gameState.p2Flipped && <div className="scanning-line" />}
@@ -183,6 +213,14 @@ const App = () => {
 
       <div className="terminal-overlay status-log">
         <p>&gt; STATUS: {gameState.status.toUpperCase()}</p>
+        {tacticalIntel && (
+          <div className="tactical-intel">
+            <p>&gt; OPERATION: {tacticalIntel.targetCards ? `${tacticalIntel.modeLabel} / FIRST TO ${tacticalIntel.targetCards}` : 'CLASSIC ATTRITION'}</p>
+            <p>&gt; STAKES: {tacticalIntel.potSize} IN POT / {tacticalIntel.possibleSwing} CARD SWING</p>
+            {tacticalIntel.incidentChain > 0 && <p>&gt; INCIDENT CHAIN: X{tacticalIntel.incidentChain}</p>}
+            {tacticalIntel.isLastStand && <p className="last-stand-alert">&gt; LAST STAND RISK: FINAL CARD MAY DECIDE THE SECTOR</p>}
+          </div>
+        )}
         {gameState.history.length > 0 && (
           <div className="history-monitor">
             {gameState.status === 'incident' || gameState.status === 'deployment' ? (
