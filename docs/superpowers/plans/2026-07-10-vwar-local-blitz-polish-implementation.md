@@ -15,7 +15,7 @@
 - Do not add incident doctrine choices, commander personas, stats, or mission achievements.
 - Do not add new runtime dependencies.
 - Use test-first changes for engine behavior.
-- Do not commit unless Vijay explicitly asks for a commit.
+- Do not commit unless the owner explicitly asks for a commit.
 
 ---
 
